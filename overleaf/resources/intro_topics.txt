@@ -1,0 +1,13 @@
+Research question/Goal
+- Get a visual reconstruction of compressed information stored as SDRs in an Associative memory model.
+
+Story:
+- Why are Associative memories worth using?
+    - Limitations of deep learning.
+    - Biological plausibility of Associative memory.
+- Willshaw Network
+    - How it works
+    - Learning rule
+    - Storage capacity (and benefit of sparse distributed codes)
+- Sparse distributes codes
+    - Mention Jeff Hawkins

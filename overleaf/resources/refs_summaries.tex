@@ -1,0 +1,309 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{My readings' summaries}
+\author{R. Simas }
+\date{September 2020}
+
+\begin{document}
+
+\maketitle
+
+\section{BAMI}
+\textbf{Hawkins-et-al-2016-Book} \cite{Hawkins-et-al-2016-Book}\newline
+BAMI proposes a framework for artificial intelligence inspired by the neocortex. At the core of the theory is the use of sparse distributed representations (SDRs). These representations are binary vectors that represent whether or not neurons are active. If the SDRs are sparse and well distributed they can be used to store a lot of patterns, they are noise resistant, and multiple patterns can be grouped using simple logical bit-wise operations. The technology that uses SDRs is the hierarchical temporal machine (HTM). This model is not tailored to any specific task.\newline
+\textbf{Introduction chapter}
+\begin{itemize}
+\item The brain defines our species.
+\item The end goal of brain-inspired AI is the acquisition and dissemination of knowledge.
+\item The ML community does not like the idea of understanding the brain as a stepping stone for machine intelligence.
+\item Just like an airplane is not a copy of a bird (wing flapping analogy) an intelligent machine must not be a copy of the brain. We just need to understand its principles.
+\item The AI community is focused on ANN approaches that are biologically impossible.
+1) ANNs are tailored to solve specific tasks, they do not propose a general theory for intelligence.
+2) Brains use common principles for the different senses and behavior: as proposed by Vernon Mountcastle in 1979.
+\item All areas of the neocortex have both sensory and motor functions: we can't build brains without incorporating behavior.
+-To understand the neocortex we must find solutions that are universal: they apply to different senses. 
+\item The principles of the brain that the HTM uses are: how neurons make predictions, the role of dendritic spikes in cortical processing, how cortical layers learn sequences, and how cortical columns learn to model objects through movement
+\end{itemize}
+
+\textbf{The 1k brains theory and HTM}
+\begin{itemize}
+\item The brain builds many models for each object/concept. When the brain is sensing information the models compete in order to see which one better fits reality. 
+\item The theory is constrained by biology but it does not mimic it 100 percent.
+\item The theory covers the neocortex and peripherals.
+\item The older parts of the brain : responsible for the basic functions of the body : are heterogeneous.
+\item Building machines that display human-like behavior is the wrong direction.
+\end{itemize}
+
+\textbf{What is intelligence}
+\begin{itemize}
+\item Historically intelligence is tightly linked to behavior.
+\item Intelligence is flexibility in learning and behavior.
+\end{itemize}
+
+\textbf{Chapter 1 HTM Overview}
+\begin{itemize}
+\item HTM is biologically constrained.
+\item ANNs' neurons are nothing like brain neurons.
+\item the goal of the HTM neuron is to model a real neuron: a biological neuron leans by forming new synapses and removing unused synapses.
+\item neurons are able to learn sequences and make predictions, which is the core component for all inference and behavior.
+\end{itemize}
+
+\textbf{The structure of the Neocortex}
+\begin{itemize}
+\item The Neocortex is 75 percent of the brain's volume.
+\item With evolution, the brain developed by stacking new areas on top of the older ones. The newer areas allowed for more complex behavior by controlling the older areas but never replacing them.  
+\item The brain is a hierarchy of brain regions that communicate.
+\item The neocortex is only found in mammals, humans have a very large neocortex, its size is believed to be an important reason for our superior intelligence.
+\item The neocortex is homogeneous : it looks the same in terms of cells and connectivity throughout.
+\item There is a general algorithm that governs the neocortex. There is nothing visual about the visual area of the brain other than the fact that it receives input from the eyes.
+\item "The entire brain is a hierarchy of brain regions, where each region interacts with a fully functional stack of evolutionarily older regions below it."
+\item The brain has approximately 90 billion neurons. Only a very small percentage of neurons are active at the same time. Activity (a neuron is spiking or not) in the brain is sparse.
+\end{itemize}
+
+\textbf{Sparse Distributed Representations (SDRs)}
+\begin{itemize}
+\item Sparse representations encode semantic information. If two SDRs have a bit in common they share a property.
+\item Dense representations (like ASCII) do not contain any information... the information is stored outside of the code. 111(7) and 110(6) in ASCII don't have any 2 features in common, it's just a list of possible values.
+\item A SDR can be used to store multiple values with the UNION operation.
+\end{itemize}
+
+\textbf{Inputs and Outputs of the neocortex}
+\begin{itemize}
+\item There are 2 basic inputs to the neocortex:
+    1) data from the senses : the sensory organs process the information and send one copy to the old brain and another to the neocortex.
+    2) a copy of the motor commands being executed by the old parts of the brain.
+\item It's like the old brain is letting the neocortex know what is happening outside the skull.
+\item "The neocortex is told what behaviors the rest of the brain is generating as well as what the sensors are sensing"
+\item The primary outputs of the neocortex come from neurons that generate behavior. But the neocortex never controls the muscles themselves. It gives instructions to other brain regions that control the muscles. (Ex: the neocortex can control breathing)
+\item A region of the neocortex is like an internet router: it does not know where in the hierarchy it is, it simply processes its local inputs and produces outputs. 
+\item HTM is designed to work on data that is changing: either naturally or by the action of the agent.
+\item HTM performs on-line learning. This makes the system adaptable to the environment.
+\end{itemize}
+
+
+\textbf{SDR chapter}
+\begin{itemize}
+\item Encoding knowledge in a computer is hard: "our knowledge of the world is not divided into discrete facts with well-defined relationships"
+\item Brains do not have the same problem as computers: they use SDRs.
+\item An SDR  is a large array where only a small percentage of the bits are 1s, the rest are 0s.
+\item Each bit of an SDR has meaning.
+\item looking at the overlap between 2 SDRs, we can see what are the semantic similarities and differences: the SDR automatically generalizes based on semantic similarity.
+\item in HTM, the information does not move around in memory as it does on a computer: The same population of neurons represents different things at different points in time.
+\item HTM works with SDRs that encode anything: from sound to words. The knowledge is in the data, not the algorithms. The algorithm is blind to what kind of data it uses.
+\item Information in the brain represent associations between concepts.
+\item in SDRs, if we have 2000 bit long arrays and want a 2% sparsity (40 ON bits): to encode words we would learn what are the 40 most important features of words.
+\item Shared ON bits in 2 SDRs is always meaningful.
+\item Storing SDRs is efficient. We only need to save the positions of the 1s. We don't even have to save all the positions. Saving only a portion of the active bits does not create many false positives in retrieval. It is also implicit generalization, as a false positive will still share a lot of features with the cue.
+\end{itemize}
+
+
+\textbf{Maths of SDRs}
+\begin{itemize}
+\item Overlap is computed with the dot product.
+\item Despite having less storage capacity than dense representations, SDR representations can still save a lot of sparse codes.
+\item The probability that 2 codes are exactly the same by chance is extremely low. The bigger the cardinality, the lower the chances of a false-positive exact match.
+\item With appropriate levels of sparsity, the SDR can do inexact matching with a very low chance of error and very good noise robustness.
+\item SDRs can be compared by subsampling the list of ON bits. A great speedup can be achieved with very little risk of false positive.
+\end{itemize}
+
+\textbf{Classification of SDR lists}
+\begin{itemize}
+\item SDRs of a class are grouped with the UNION operation producing a class SDR. A cue vector belongs to the class if it is close (like nearest neighbor) to it.
+\item The UNION operation has a great advantage: a fixed-sized SDR can represent a dynamic list. The downside of UNION is that the effectiveness of it will decrease as more and more elements are merged.
+\item The UNION operation can generate false positives for matching.
+\item Small linear changes in the parameters of the SDR (like n, w, and theta) improve the robustness to noise and capacity exponentially.
+\end{itemize}
+
+\textbf{How Brains use SDRs}
+\begin{itemize}
+\item "f you look at any population of neurons in the neocortex their activity will be sparse, where a low percentage of neurons are highly active (spiking) and the remaining neurons are inactive or spiking very slowly."
+\item ON/OFF is an oversimplification. Neurons emit spikes of energy over time which vary in frequency throughout time under different conditions.
+\item There are multiple view/models of neurons:
+    1) The timing of each spike matters: the inter-spike time encodes information.
+    2) The output of a neuron is a scalar value corresponding to the rate of spiking.
+\item An argument for not looking at inter-spike timings: "t has been shown that sometimes the neocortex can perform significant tasks so quickly that the neurons involved do not have enough time for even a second spike from each neuron to contribute to the completion of the task"
+\item Neurons sometimes have mini-bursts of spiking before firing. These mini-bursts can heavily affect other post-synaptic cells.
+\item HTM accounts for 4 neuron states: ON, OFF, predicted, ON after predicted. Where predicted means some mini-bursts occurred. These predicted states are essential for time-series prediction.
+\item In the brain individual neurons are never important. It's the collection of active neurons as a whole that matters.
+\item HTM ignores spiking rates as it has been shown to be non-essential for neocortical functions. Also, a simple binary vector is good for computers.
+\end{itemize}
+
+\textbf{SDR union as Neural prediction}
+\begin{itemize}
+\item A union of SDRs makes multiple predictions of what will happen next. In the brain, multiple sets of cells are depolarized at the same time. 
+\item Memory in a computer is of random access: you can access the information in any order you like as long as you know the addresses. In biological memories, things are stored in association. Every neuron participates in forming and learning the associations.
+\end{itemize}
+
+\section{Storing Object-Dependent Sparse Codes in a Willshaw Associative Network}
+\textbf{sa2020storing} \cite{sa2020storing}\newline
+
+A method for transforming MNIST data into binary vectors. These vectors are sparse and well distributed (use the entire array). These are good properties for the Willshaw Network: a one-layer NN that stores associations between binary vectors. Good storage capacity and noise robustness are achieved.
+
+\textbf{Introduction}
+\begin{itemize}
+\item Willshaw is local and Hebbian.
+\item Willshaw works best for random and sparse patterns.
+\item The technique consists in:
+1)detecting features in the image space
+2)mapping the detected features into an object-centered unit circle.
+\item This process will ensure that different categories of objects end up in disjoint space, since all classes have similar frequency the space usage will get close to uniform.
+\item The code generation has parameters that allow us to control the sparseness of the result.
+\end{itemize}
+
+\textbf{Methods}
+\begin{itemize}
+\item Retinotopic step: There is no all-to-all connectivity. Each unit in the network is connected to a subspace of the input (receptive fields).
+\item Retinotopic Layer:
+There are K planes of I*J feature extracting units.
+\item Each plane is a map of all occurrences of a specific local feature.
+\item K-means is employed to learn the relevant features.
+\item The units' weights of a plane represent a feature. The units compute the similarity between input and their weight (feature detection).
+2) Object dependent step: to gain invariance to transformation.
+\item We first compute the radius and center of the object.
+\item We transform the feature maps by changing the coordinate system
+\item We transform the feature maps by changing the coordinate system
+\end{itemize}
+
+\textbf{Experiments}. The procedure is:
+\begin{itemize}
+\item Transform MNIST into a coded set.
+\item Store the coded set in the Willshaw Memory in Auto-Asso.
+\item Use the coded set as cues on the filled memory to get the retrieved set.
+\item The retrieved set is used to train a 1NN classifier.
+\item Retrieve the patterns using the loaded memory.
+\item Use the coded set to test the classifier and report accuracy.
+\end{itemize}
+
+RESULTS:
+\begin{itemize}
+\item The two main variables that influence performance are the sparseness of the inputs and the number of stored patterns in memory.
+\item With appropriate parameters we can fill the memory with thousands of patterns with and without noise.
+\end{itemize}
+
+\section{Principles of Quantum Artificial Intelligence: chapter 4.4}
+\textbf{wichert2020principles} \cite{wichert2020principles}\newline
+Willshaw network, also refered to as  simply Associative Memory is a biologically plausible model that works on the same principles as the human memory. It uses the Hebbian learning rule. This chapter gives an overview of the Willshaw network explaining the lerning rules, retreival and backprojection algorithms, storage capacity, how pattern sparsity and distribution affect the network, and applications of the network such as deductive systems and taxonomy.
+\begin{itemize}
+\item Human memory is based on associations: it's content-addressable.
+\item Key characteristics of associative memory are: 1) the ability to correct faults if the given information is false.    2) the ability to complete information (partial cues).    3) The ability to interpolate: retrieve the most similar stored pattern in case there is no exact match.
+\item Willshaw associative memory is a matrix W of size m*n (m: the size of question vectors, n: the size of the answer vectors) that stores association between pairs of vectors.
+\item The matrix is initially all zeros. As pairs of question-answer vectors are presented, the matrix is updated to store the correlations with a local Hebbian learning rule.
+\item The matrix can be used in two ways: 1) Present a question vector x and determine the answer y by performing a thresholded dot product of W and x. This threshold was originally the number of 1s in x but a better T is the maximum value of W.x.    2) After having retrieved the answer to our cue, we can use the transpose of W to compute a backward projection. This last vector can be compared to the original cue and the difference between them computed.
+\item Assuming that all the patterns stored in memory equally occupy the input space, the ideal number of ON bits of patterns of size n is $k \doteq \log _{2}(n / 4)$ [Palm]
+\item With this level of sparsity, we can expect to store up to 
+$L \doteq(\ln 2)\left(n^{2} / k^{2}\right)$ associations. This great storage capacity only applies to very gib memories.
+\item The patterns stored in the Willshaw memory can represent simple logical statements and the memory works as a deductive system. The threshold of each unit determines the type of logic (AND/OR). The memory is used to retrieve patterns repeatedly, using the answer from the previous iteration as input to the next one. The process ends when the pattern converges to a stable state.
+\item Willshaw memories can represent modules of logic, these independent modules can be arranged along the diagonal of a huge matrix, and the connectivity between modules is added by adding ones in the huge matrix.
+\end{itemize}
+
+\section{Self-organization and associative memory}
+\textbf{kohonen2012self} \cite{kohonen2012self}\newline
+\subsection{Chapter 1 - Variouse Aspects of Memory}
+\begin{itemize}
+\item there is no particular area of the brain dedicated to memory
+\item The neocortex is remarkably uniform from one area to another
+\item The most importnat aspect of biological neural networks is associated with the synaptic connections. The coupling strengths can be taken as mathematical memory parameters.
+\item Computers use location addressing. Given an address, the address decoder logic will make it so that only one decoder is active and reads from memory.
+\item Content addressable memories are different: There are comparison circuits that compare a particular keyword in parallel with the contents of all locations.
+\item Kohonen says that reconstruction of recollections is non-practical and should be abandoned.
+\end{itemize}
+
+\section{Associative Memory for Binary Image Storage and Retrieval}
+\textbf{sacramento2021Associative} [not published yet]
+
+This overview looks at different associative memories and compares them in terms of performance and storage. The author also discusses 2 improvements: first a hierarchical associative filter; second an exponential transform that produces sparse codes in high dimensions.
+\subsection{Introduction}
+\begin{itemize}
+\item Associative memories (AMs) promise to replicate functions of the brain.
+\item AMs are not good at dealing with natural, non-random data.
+\item Mechanisms to encode real data are needed in order to use AMs to their full potential.
+\end{itemize}
+\subsection{Related work}
+\begin{itemize}
+\item Lernmatrix by K. Steinbuch is the original Willshaw network.
+\item neural associative memory (NAM), is the term that refers to ANNS that map associations between discrete input and output space. 
+\item NAMs use content-addressability, while computers perform location-addressing.
+\item Individual neurons of an AM do not store specific information, it's the set of responses that must be memorized as a whole, the information is distributed across all units of the network.
+\item NAMs can perform hetero-association or auto-association.
+\item A vector is sparse if it has p<<0.5 (p is the percentage of ON bits). In infinity notation, a vector is sparse if its p goes to zero as the vector size goes to infinity.
+\item A vector is non-sparse if the limit for p as m goes to infinity is non-zero. For example, on random patterns, the limit is 0.5. 
+\item Similarity between patterns is measured using the Hamming Distance -- the distance between 2 binary patterns is the number of bits where the two differ.
+\item The memory can be trained in two ways: either with incremental or with binary learning rules. The first one amounts to changing W by showing patterns one at a time to the memory. The binary learning rule consists of applying a non-linear function such as sgn() to the whole matrix W.
+\item Retrieval is performed by presenting a question vector to the memory. Then each unit computes its dendritic potential Sj. Then each unit computes the output with a transfer function. This function has a threshold parameter (theta) which can be global, or local to each unit. The most used transfer function is the Heaviside step function. Notice that each unit computes its output independently which means the retrieval process can be parallelized in the case of one-layer feedforward AMs ( in memories such as Hopfield's the retrieval is an iterative process that tries to reach a stable state).
+\item Lernmatrix uses a modified version of Hebbian Learning. Where 1s are added to the matrix in position ij if a vector x and its association y share a bit in position xi and yj. The original Hebbian learning would.
+\item The clipped version of the Lernmatrix is not able to "forget" associations. But if an incremental rule is applied, one can perform anti-Hebbian learning to forget undesirable associations.
+\item The threshold parameter for the transfer function plays an important role in the quality of the retrievals.A naive approach is to set this threshold to the number of 1s in the question vector. A better approach is a softmax threshold -- where the retrieval will only fail if none of the components of the question vector are present in the other patterns stored in memory.
+\item Palm studied the storage capacity of NAM and also underlined the importance of sparseness of stored vectors. 
+\item Palm concluded that the number of ON bits M should be: $M=\log _{2}\left(\frac{n}{4}\right)$ and also that the number of pairs of vectors that can be stored is $L=(\ln 2)\left(\frac{n^{2}}{M^{2}}\right)$. If these criteria are met, the Lernmatrix has a very generous storage capacity.
+\item Implementation is efficient as in it can be done in parallel and also sparse matrices and vectors can be represented in pointer structures.
+\end{itemize}
+\subsection{Other NAMs}
+\begin{itemize}
+\item \textbf{The Linear Associator} learns a matrix of real values that stores associations between real vectors. It uses Hebbian Learning for an incremental learning rule. This model is very limited especially in terms of storage capacity because it can only effectively store orthogonal vectors. Also, the capacity is low: $L=n$. Improvements to this simple model have been proposed. One of them allows for the stored patterns not to be orthogonal but simply linearly separable, another improvement granted better storage capacity at the cost of performance.
+\item \textbf{The Hopfield Net}: strictly auto-associative with recurrent connections and only 1 layer. It also performs random asynchronous updates (Lernmatrix and Linear associator lack this feature). A discrete version of the Hopfield net exists but the most interesting one is binary. The net is described by a square matrix that is symmetric and has a zero diagonal. The network always converges to a stable pattern that represents a minimum in the energy landscape. This minimum is not always the global minimum-- as the net fills up, spurious patterns emerge. The capacity of a Hopfield net is $L=0.14n$ Improvements to the original model have pushed the capacity up. Like the lernmatrix, the HopNet benefits from sparse codes: having activity of the logarithmic order pushes the storage capacity beyond the former limit.
+\item \textbf{Bidirectional Associative Memory}: is an extension of the HopNet which allows for heteroassociations. BAMs also have symmetric all-to-all connections but have 2 layers (HopNets only have 1). Binary and continuous versions of BAMs are possible, we focus on the binary one. Using Palm's information theory, the BAM is able to achieve better storage capacity than the Lernmatrix. The fact that the BAM has two layers gives it an interesting property: the stored associations x->y become birectional x<->y and we can retreive in any direction as long as we transpose W accordingly. 
+\end{itemize}
+
+\section{Top 10 algorithms in data mining}
+\textbf{wu2008top} \cite{wu2008top}\newline
+Cited by sa couto in \cite{sa2020storing} when he presents k-means as a good option to perform unsupervised feature extraction on visual patterns.  
+
+\section{Least squares quantization in PCM}
+\textbf{lloyd1982least} \cite{lloyd1982least}\newline
+Cited by sa couto in \cite{sa2020storing} when he presents k-means as a good option to perform unsupervised feature extraction on visual patterns.  
+
+\section{Convolutional networks for images, speech, and time series}
+\textbf{lecun1995convolutional} \cite{lecun1995convolutional}\newline
+Cited by sa couto in \cite{sa2020storing} when he describes a convution-like layer of his architecture. 
+
+\section{The Surprising Creativity ofDigital Evolution}
+\textbf{lehman2020surprising} \cite{lehman2020surprising}\newline
+A compendium of examples where evolutionary algorithms surprised their creator.
+\begin{itemize}
+    \item Makes a great point on why we should look at biology to advance our algorithms.
+    \item Criticizes the results-oriented way in which science is done now a days.
+    \item gives usefull tips for begginers in research.
+    \item "the process of biological evolution is extremely creative [9, 29], at least in the sense that itproduces surprising and complex solutions that would be deemed creative if produced by a human."
+    \item " evolution can happen wherever replication, variation, and selection intersect"
+    \item "  these cases demonstrate that robust digital models of evolution do notblindly reflect the desires and biases of their creators, but instead they have depth sufficient to yieldunexpected results and new insights"
+    \item “evolution will occur whenever and wherever three conditions are met: replication, variation (mu-tation), and differential fitness (competition)”[26, pp. E83–E92]; no particular molecule (e.g., DNAor RNA) or substrate (e.g., specific physical embodiment) is required."
+    \item "We often ascribe creativity to lawyers who find subtle legal loop-holes, and digital evolution is often frustratingly adept at finding similar exploits."
+    \item "fitness functions often do not include implicit knowledge held byexperts, thus allowing for solutions that experts consider so ridiculous, undesirable, or unexpectedthat they did not think to exclude or penalize such solutions when originally designing the fitnessfunction"
+    \item "organisms with a higher percentage of neutral code have a lower chance of randomchanges happening to critical code. The result is that bloated individuals are more likely to produceunchanged offspring, which grants them an indirect evolutionary advantage because the average fit-ness of unchanged offspring is higher than that of offspring with mutations that have affected func-tioning code"
+    
+\end{itemize}
+
+\section{Human-level control through deep reinforcement learning}
+\textbf{mnih2015human} \cite{mnih2015human}\newline
+The architecture that plays atari games from raw pixel input. A deep RL architecture that mixes Q-Learning with DANNs is used.
+
+
+\section{Computer science as empirical inquiry: Symbols and search}
+\textbf{newell2007computer} \cite{newell2007computer}\newline
+Proposal of the Symbolic paradigm of computers.
+
+\section{Deep Blue}
+\textbf{campbell2002deep} \cite{campbell2002deep}\newline
+Describes the architecture of deep blue: the algorithm that defeated kasparov in chess.
+
+\section{Multilayer feedforward networks are universal approximators}
+\textbf{hornik1989multilayer} \cite{hornik1989multilayer}\newline
+MLP
+
+\section{Machine Learning, Ch 10 - LEARNING SETS OF RULES }
+\textbf{mitchell1997machine} \cite{mitchell1997machine}\newline
+first order logic ML.
+
+\section{Image processing, analysis, and machine vision }
+\textbf{sonka2014image} \cite{sonka2014image}\newline
+Computer Vision Bible
+
+\section{A computational investigation into the human representation and processing of visual information}
+\textbf{man1982computational} \cite{man1982computational}\newline
+Book that pioneered in a biologically inspired approach to computer vision.
+
+\bibliography{refs} 
+\bibliographystyle{ieeetr}
+
+\end{document}

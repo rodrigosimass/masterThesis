@@ -34,3 +34,8 @@ FINAL WEEK:
 [ ] Change the name of section "Vectors" to "patterns" or "codes"
 [ ] Change encoding function to "Encoding Prescription" on entire document
 [ ] Decide on using "I" or "we" and make it consistent throughout the document
+
+LAST DETAILS
+[ ] Mention L1 regularization in AEs chapter.
+[ ] Cite Palm about the sparse autoencoders
+[ ] 

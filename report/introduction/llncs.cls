@@ -1214,5 +1214,11 @@ to0pt{\kern0.55\wd0\vrule height0.45\ht0\hss}\box0}}}}
 \setlength\arraycolsep{1.4\p@}
 \setlength\tabcolsep{1.4\p@}
 
+\makeatletter
+\renewcommand\l@author[2]{}
+\renewcommand\l@title[2]{}
+\makeatletter
+
+
 \endinput
 %end of file llncs.cls

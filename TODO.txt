@@ -1,0 +1,3 @@
+0: getting familiar with the code
+    [] experiment with winner takes all
+    [] 

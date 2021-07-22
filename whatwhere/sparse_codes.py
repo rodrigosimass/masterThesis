@@ -238,12 +238,12 @@ def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8):
             open(f"whatwhere/pickles/{run_name}__features.p", "wb"),
         )
 
-    plot_features(features, features_shape, run_name)
+    plot_features2(features, features_shape, run_name)
 
     return features
 
 
-def load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta):
+def load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta, labels):
 
     try:
         codes = pickle.load(open(f"whatwhere/pickles/{run_name}__codes.p", "rb"))
@@ -268,9 +268,13 @@ def load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta):
         pickle.dump(codes, open(f"whatwhere/pickles/{run_name}__codes.p", "wb"))
         print(f"saving codes to pickles/{run_name}__codes.p")
 
-    # plot_examples(trn_imgs, codes, features, k, Q, run_name)
-    # plot_sparse_dense_examples(trn_imgs, codes, features, k, Q, run_name)
-    # plot_sparsity_distribution(codes, k, Q, run_name)
-    plot_mnist_codes_activity(trn_imgs, codes, k, Q, run_name)
+    plot_feature_maps_overlaped(trn_imgs,codes, k, Q, run_name)
+    """ plot_class_activity_2D(codes, labels, k, Q, run_name)
+    plot_class_activity_1D(codes, labels, k, Q, run_name)
+    plot_feature_maps(codes, k, Q, run_name)
+    plot_examples(trn_imgs, codes, features, k, Q, run_name)
+    plot_sparse_dense_examples(trn_imgs, codes, features, k, Q, run_name)
+    plot_sparsity_distribution(codes, k, Q, run_name)
+    plot_mnist_codes_activity(trn_imgs, codes, k, Q, run_name) """
 
     return codes

@@ -1,7 +1,10 @@
+from util import *
 import matplotlib.pyplot as plt
 from util import *
 import random
 import numpy as np
+
+rand = 17
 
 
 def plot_features(W, patch_size, run_name):
@@ -24,6 +27,91 @@ def plot_features(W, patch_size, run_name):
     plt.savefig(f"whatwhere/img/{run_name}__features.png")
 
 
+def plot_features2(W, patch_size, run_name):
+
+    plt.close()
+
+    bl = best_layout(W.shape[0])
+
+    fig, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+
+    aux = 0
+    for i in range(bl[0]):
+        for j in range(bl[1]):
+            axs[i][j].imshow(
+                W[aux].reshape(patch_size),
+                vmax=1,
+                vmin=0,
+                cmap=plt.cm.gray,
+                interpolation="nearest",
+            )
+            axs[i][j].set_xticks([])
+            axs[i][j].set_yticks([])
+            aux += 1
+
+    plt.savefig(f"whatwhere/img/{run_name}__features.png")
+
+
+def plot_feature_maps(X_trn, k, Q, run_name):
+
+    plt.close()
+
+    Tr = X_trn.toarray()
+    size = Tr.shape[0]
+    Tr = Tr.reshape(size, k, Q, Q)
+
+    example = Tr[rand]
+
+    bl = best_layout(k)
+
+    fig, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+
+    aux = 0
+    for i in range(bl[0]):
+        for j in range(bl[1]):
+            axs[i][j].imshow(
+                example[aux].reshape(Q, Q),
+                vmax=1,
+                vmin=0,
+                cmap=plt.cm.gray,
+                interpolation="nearest",
+            )
+            axs[i][j].set_xticks([])
+            axs[i][j].set_yticks([])
+            aux += 1
+
+    plt.savefig(f"whatwhere/img/{run_name}__Fmaps.png")
+
+
+def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name):
+
+    plt.close()
+
+    Tr = X_trn.toarray()
+    size = Tr.shape[0]
+    Tr = Tr.reshape(size, k, Q, Q)
+
+    example = Tr[rand]
+
+    combined = np.average(example, axis=0)
+
+    fig, axs = plt.subplots(1, 2, constrained_layout=True)
+
+    axs[0].imshow(
+        data[rand].reshape((28, 28)),
+        cmap=plt.cm.gray,
+        interpolation="nearest",
+    )
+
+    axs[1].imshow(
+        combined,
+        cmap=plt.cm.gray,
+        interpolation="nearest",
+    )
+
+    plt.savefig(f"whatwhere/img/{run_name}__FmapsCombined.png")
+
+
 def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
 
     Tr = X_trn.toarray()
@@ -33,7 +121,6 @@ def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
     fig, axs = plt.subplots(num_examples + 1, 2, constrained_layout=True)
     fig.suptitle(f"%B = {binary_sparsity(Tr)}")
 
-    rand = np.random.permutation(D.shape[0])[0]
     axs[0][0].imshow(
         D[rand],
         vmax=1,
@@ -44,7 +131,7 @@ def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
     axs[0][0].set_title("Original pattern")
 
     axs[0][1].imshow(
-        Tr[rand].reshape(best_layout(Tr[rand].size)),
+        Tr[rand],
         vmax=1,
         vmin=0,
         cmap=plt.cm.gray,
@@ -57,7 +144,7 @@ def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
         axs[i][0].imshow(
             K[rand_k], vmax=1, vmin=0, cmap=plt.cm.gray, interpolation="nearest"
         )
-        axs[i][0].set_title(f"filter {i} out of {k}")
+        axs[i][0].set_title(f"filter {rand_k} out of {k}")
 
         axs[i][1].imshow(
             Tr[rand][rand_k].reshape(Q, Q),
@@ -192,3 +279,57 @@ def plot_mnist_codes_activity(mnist, s_codes, k, Q, run_name):
     fig.tight_layout()
 
     plt.savefig(f"whatwhere/img/{run_name}__comparisson.png")
+
+
+def plot_class_activity_1D(codes, labels, k, Q, run_name):
+
+    plt.close()
+
+    Tr = codes.toarray()
+    size = Tr.shape[0]
+    Tr = Tr.reshape(size, k * Q * Q)
+
+    fig, axs = plt.subplots(10, 1, sharex=True)
+
+    fig.suptitle("Average activity per class (whatwhere)", fontsize=16)
+
+    for i in range(10):
+        avgImg = np.average(Tr[labels == i], 0)
+        ax = axs[i]
+        ax.bar(
+            np.arange(k * Q * Q),
+            avgImg.flatten(),
+            align="center",
+            alpha=0.7,
+            color="Black",
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_ylabel(i, rotation=0)
+
+    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_1D.png")
+
+
+def plot_class_activity_2D(codes, labels, k, Q, run_name):
+
+    plt.close()
+
+    Tr = codes.toarray()
+    size = Tr.shape[0]
+    Tr = Tr.reshape(size, k, Q * Q)
+    sums = np.sum(Tr, axis=1)
+
+    fig, axs = plt.subplots(2, 5, constrained_layout=True)
+    fig.suptitle("Average pixel activity per class (WW)", fontsize=16)
+
+    for i in range(10):
+        avgImg = np.average(sums[labels == i], 0)
+        ax = axs[i // 5][i % 5]
+        ax.imshow(avgImg.reshape(Q, Q), cmap="Greys")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        activity = np.sum(avgImg) / (k * Q * Q)
+        str = "{:.4f}".format(activity)
+        ax.set_title(f"({i})s={str}")
+
+    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_2D.png")

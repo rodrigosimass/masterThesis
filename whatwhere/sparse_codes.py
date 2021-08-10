@@ -221,7 +221,7 @@ def learn_features(trn_imgs, k, patch_size, rng, n_epochs, background=0.8, kmean
     return kmeans.cluster_centers_.reshape((-1,) + patch_size), kmeans
 
 
-def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8):
+def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False):
     features_shape = (
         1 + 2 * Fs,
         1 + 2 * Fs,
@@ -238,19 +238,22 @@ def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8):
             open(f"whatwhere/pickles/{run_name}__features.p", "wb"),
         )
 
-    plot_features2(features, features_shape, run_name)
+    if plot:
+        plot_features2(features, features_shape, run_name)
 
     return features
 
 
-def load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta, labels):
+def load_or_compute_codes(
+    run_name, trn_imgs, k, Q, features, T_what, wta, labels, plot=False
+):
 
     try:
-        codes = pickle.load(open(f"whatwhere/pickles/{run_name}__codes.p", "rb"))
+        codes_csr = csr_matrix(pickle.load(open(f"whatwhere/pickles/{run_name}__codes.p", "rb")), dtype=np.ushort)
         print(f"loaded codes from pickle: pickles/{run_name}__codes.p")
     except (OSError, IOError) as _:
         print("generating codes")
-        codes = np.zeros((trn_imgs.shape[0], k * Q ** 2))
+        codes_np = np.zeros((trn_imgs.shape[0], k * Q ** 2))
         for i in range(trn_imgs.shape[0]):  # for all images
             if i % 1000 == 0:
                 print(i / 1000, " out of ", trn_imgs.shape[0] / 1000)
@@ -261,20 +264,26 @@ def load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta, label
                 # no feature is detected
                 p = polar_transform(s)
                 e = grid_encoding(p, Q, features.shape[0])
-                codes[i] = e.flatten()
+                codes_np[i] = e.flatten()
             else:
-                codes[i] = np.zeros(k * Q * Q)
-        codes = csr_matrix(codes)  # guardar como matrix esparsa
-        pickle.dump(codes, open(f"whatwhere/pickles/{run_name}__codes.p", "wb"))
+                codes_np[i] = np.zeros(k * Q * Q)
+        codes_csr = csr_matrix(codes_np, dtype=np.ushort)  # guardar como matrix esparsa
+        pickle.dump(codes_csr, open(f"whatwhere/pickles/{run_name}__codes.p", "wb"))
         print(f"saving codes to pickles/{run_name}__codes.p")
 
-    plot_feature_maps_overlaped(trn_imgs,codes, k, Q, run_name)
-    """ plot_class_activity_2D(codes, labels, k, Q, run_name)
-    plot_class_activity_1D(codes, labels, k, Q, run_name)
-    plot_feature_maps(codes, k, Q, run_name)
-    plot_examples(trn_imgs, codes, features, k, Q, run_name)
-    plot_sparse_dense_examples(trn_imgs, codes, features, k, Q, run_name)
-    plot_sparsity_distribution(codes, k, Q, run_name)
-    plot_mnist_codes_activity(trn_imgs, codes, k, Q, run_name) """
+    print(
+        f"""Coded set sparsity = {codes_csr.nnz/ (codes_csr.shape[0] * codes_csr.shape[1])}
+    """
+    )
 
-    return codes
+    if plot:
+        plot_examples(trn_imgs, codes_csr, features, k, Q, run_name, "C", num_examples=3)
+        plot_mnist_codes_activity(trn_imgs, codes_csr, k, Q, run_name, "C")
+        plot_feature_maps(codes_csr, k, Q, run_name, "C")
+        plot_feature_maps_overlaped(trn_imgs, codes_csr, k, Q, run_name, "C")
+        plot_class_activity_2D(codes_csr, labels, k, Q, run_name, "C")
+        plot_class_activity_1D(codes_csr, labels, k, Q, run_name, "C")
+        plot_sparse_dense_examples(trn_imgs, codes_csr, features, k, Q, run_name, "C")
+        plot_sparsity_distribution(codes_csr, k, Q, run_name, "C")
+
+    return codes_csr

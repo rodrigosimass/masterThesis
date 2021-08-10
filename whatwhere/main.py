@@ -1,3 +1,4 @@
+from numpy.core.numeric import False_
 from numpy.lib import utils
 from sparse_codes import *
 from wn import *
@@ -10,7 +11,7 @@ k = 20
 Q = 21
 %B = 0.0068
 Fs = 2 radius of receptive fields (size of the receptive fields is 5 * 5)
-I = J = 28
+I = J = 28 (mnist)
 """
 
 rng = np.random.RandomState(0)  # reproducible
@@ -31,20 +32,34 @@ small_test = False  # uses only 600 MNIST examples
 trn_imgs = trn_imgs / 255.0
 
 run_name = ""
+
 if small_test:
     trn_imgs = trn_imgs[:600, :, :]
     trn_lbls = trn_lbls[:600]
     run_name += "small_"
 
-print(
-    "Training set shape: ", trn_imgs.shape, "Training target shape = ", trn_lbls.shape
-)
 
 run_name += "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
 features = load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=b)
 
 run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
-codes = load_or_compute_codes(run_name, trn_imgs, k, Q, features, T_what, wta, trn_lbls)
+codes_csr = load_or_compute_codes(
+    run_name, trn_imgs, k, Q, features, T_what, wta, trn_lbls, plot=False
+)
 
-run_name += "_fac" + str(factor_of_stored)
-will = load_or_compute_will(run_name, codes, factor_of_stored)
+# run_name += "_fac" + str(factor_of_stored)
+
+will_csr = load_or_compute_will(run_name, codes_csr, factor_of_stored)
+
+ret_csr = load_or_compute_ret(
+    trn_imgs,
+    features,
+    run_name,
+    codes_csr,
+    will_csr,
+    trn_lbls,
+    k,
+    Q,
+    factor_of_stored,
+    plot=True,
+)

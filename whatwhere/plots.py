@@ -4,12 +4,12 @@ from util import *
 import random
 import numpy as np
 
-rand = 17
+rand = 10
 
 
 def plot_features(W, patch_size, run_name):
     plt.figure(figsize=(4.2, 4))
-    plt.title("Features learnt with k-means")
+    plt.suptitle("Features learnt with k-means", fontsize=16)
     for i, patch in enumerate(W):
         plt.subplot(9, 9, i + 1)
         plt.imshow(
@@ -52,7 +52,7 @@ def plot_features2(W, patch_size, run_name):
     plt.savefig(f"whatwhere/img/{run_name}__features.png")
 
 
-def plot_feature_maps(X_trn, k, Q, run_name):
+def plot_feature_maps(X_trn, k, Q, run_name, set):
 
     plt.close()
 
@@ -65,6 +65,8 @@ def plot_feature_maps(X_trn, k, Q, run_name):
     bl = best_layout(k)
 
     fig, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+
+    fig.suptitle(f"Feature maps for pattern {rand} ({set})", fontsize=16)
 
     aux = 0
     for i in range(bl[0]):
@@ -80,10 +82,10 @@ def plot_feature_maps(X_trn, k, Q, run_name):
             axs[i][j].set_yticks([])
             aux += 1
 
-    plt.savefig(f"whatwhere/img/{run_name}__Fmaps.png")
+    plt.savefig(f"whatwhere/img/{run_name}__Fmaps_{set}.png")
 
 
-def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name):
+def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name, set):
 
     plt.close()
 
@@ -109,17 +111,18 @@ def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name):
         interpolation="nearest",
     )
 
-    plt.savefig(f"whatwhere/img/{run_name}__FmapsCombined.png")
+    plt.savefig(f"whatwhere/img/{run_name}__FmapsCombined_{set}.png")
 
 
-def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
+def plot_examples(D, X_trn, K, k, Q, run_name, set, num_examples=3):
 
     Tr = X_trn.toarray()
     size = Tr.shape[0]
     Tr = Tr.reshape(size, k, Q * Q)
 
     fig, axs = plt.subplots(num_examples + 1, 2, constrained_layout=True)
-    fig.suptitle(f"%B = {binary_sparsity(Tr)}")
+    str = "{:.5f}".format(binary_sparsity(Tr))
+    fig.suptitle(f"Examples of feature maps ({set} set) %B = {str}")
 
     axs[0][0].imshow(
         D[rand],
@@ -139,6 +142,7 @@ def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
     )
     axs[0][1].set_title("Coded pattern")
 
+    random.seed(0)
     for i in range(1, num_examples + 1):
         rand_k = random.randint(0, k - 1)
         axs[i][0].imshow(
@@ -156,10 +160,10 @@ def plot_examples(D, X_trn, K, k, Q, run_name, num_examples=3):
         axs[i][1].set_title("filter map")
 
     # fig.set_size_inches(15, 8)
-    plt.savefig(f"whatwhere/img/{run_name}__codes.png")
+    plt.savefig(f"whatwhere/img/{run_name}__codes_{set}.png")
 
 
-def plot_sparsity_distribution(codes, k, Q, run_name):
+def plot_sparsity_distribution(codes, k, Q, run_name, set):
     plt.close()
 
     Tr = codes.toarray()
@@ -184,10 +188,10 @@ def plot_sparsity_distribution(codes, k, Q, run_name):
     maxfreq = n.max()
     ax.set_ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 
-    plt.savefig(f"whatwhere/img/{run_name}__sparsityDistribution.png")
+    plt.savefig(f"whatwhere/img/{run_name}__sparsityDistribution_{set}.png")
 
 
-def plot_sparse_dense_examples(D, X_trn, K, k, Q, run_name):
+def plot_sparse_dense_examples(D, X_trn, K, k, Q, run_name, set):
 
     plt.close()
 
@@ -209,7 +213,7 @@ def plot_sparse_dense_examples(D, X_trn, K, k, Q, run_name):
 
     bl = best_layout(k * Q * Q)
 
-    print(Tr[0].shape)
+    # print(Tr[0].shape)
 
     axs[0][0].imshow(
         D[dense_idx],
@@ -237,15 +241,18 @@ def plot_sparse_dense_examples(D, X_trn, K, k, Q, run_name):
     str = "{:.4f}".format(avg)
     axs[1][1].set_title(f"sparsity = {str}")
 
-    plt.savefig(f"whatwhere/img/{run_name}__sparsedense.png")
+    plt.savefig(f"whatwhere/img/{run_name}__sparsedense_{set}.png")
 
 
-def plot_mnist_codes_activity(mnist, s_codes, k, Q, run_name):
+def plot_mnist_codes_activity(mnist, s_codes, k, Q, run_name, set):
 
     plt.close()
 
     fig, axs = plt.subplots(2, 1)
-    fig.suptitle("Activity in the MNIST dataset vs Whatwhere codes")
+    if set == "C":
+        fig.suptitle("Activity in the MNIST dataset vs Coded Set")
+    else:
+        fig.suptitle("Activity in the MNIST dataset vs Retrieved Set")
 
     codes = s_codes.toarray().reshape(s_codes.shape[0], k * Q * Q)
 
@@ -262,7 +269,7 @@ def plot_mnist_codes_activity(mnist, s_codes, k, Q, run_name):
     )
     axs[0].set_ylabel("frequency")
     axs[0].set_xlim([1, sum_mnist.shape[0]])
-    axs[0].set_ylim([0.0, 0.5])
+    axs[0].set_ylim([0.0, np.max(sum_mnist)])
 
     axs[1].set_title(f"Whatwhere activity (1D)")
     axs[1].bar(
@@ -274,24 +281,26 @@ def plot_mnist_codes_activity(mnist, s_codes, k, Q, run_name):
     )
     axs[1].set_ylabel("frequency")
     axs[1].set_xlim([1, sum_codes.shape[0]])
-    axs[1].set_ylim([0.0, 0.1])
+    axs[1].set_ylim([0.0, np.max(sum_codes)])
 
     fig.tight_layout()
 
-    plt.savefig(f"whatwhere/img/{run_name}__comparisson.png")
+    plt.savefig(f"whatwhere/img/{run_name}__comparisson_{set}.png")
 
 
-def plot_class_activity_1D(codes, labels, k, Q, run_name):
+def plot_class_activity_1D(codes, labels, k, Q, run_name, set):
 
     plt.close()
 
     Tr = codes.toarray()
     size = Tr.shape[0]
+    labels = labels[:size]
     Tr = Tr.reshape(size, k * Q * Q)
+
 
     fig, axs = plt.subplots(10, 1, sharex=True)
 
-    fig.suptitle("Average activity per class (whatwhere)", fontsize=16)
+    fig.suptitle(f"Average pixel activity per class ({set} set)", fontsize=16)
 
     for i in range(10):
         avgImg = np.average(Tr[labels == i], 0)
@@ -307,21 +316,21 @@ def plot_class_activity_1D(codes, labels, k, Q, run_name):
         ax.set_yticks([])
         ax.set_ylabel(i, rotation=0)
 
-    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_1D.png")
+    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_1D_{set}.png")
 
 
-def plot_class_activity_2D(codes, labels, k, Q, run_name):
+def plot_class_activity_2D(codes, labels, k, Q, run_name, set):
 
     plt.close()
 
     Tr = codes.toarray()
     size = Tr.shape[0]
+    labels = labels[:size]
     Tr = Tr.reshape(size, k, Q * Q)
     sums = np.sum(Tr, axis=1)
 
     fig, axs = plt.subplots(2, 5, constrained_layout=True)
-    fig.suptitle("Average pixel activity per class (WW)", fontsize=16)
-
+    fig.suptitle(f"Average pixel activity per class ({set} set)", fontsize=16)
     for i in range(10):
         avgImg = np.average(sums[labels == i], 0)
         ax = axs[i // 5][i % 5]
@@ -332,4 +341,4 @@ def plot_class_activity_2D(codes, labels, k, Q, run_name):
         str = "{:.4f}".format(activity)
         ax.set_title(f"({i})s={str}")
 
-    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_2D.png")
+    plt.savefig(f"whatwhere/img/{run_name}__WW_classes_2D_{set}.png")

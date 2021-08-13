@@ -183,9 +183,9 @@ background :  minimum windows norm
  """
 
 
-def learn_features(trn_imgs, k, patch_size, rng, n_epochs, background=0.8, kmeans=None):
+def learn_features(trn_imgs, k, patch_size, rng, n_epochs, background=0.8, kmeans=None, verbose = False):
     # background discards values of patterns that are small in norm
-    print("Learning the dictionary... ")
+    print(f"Learning a new dictionary...")
     if kmeans is None:
         kmeans = MiniBatchKMeans(n_clusters=k, random_state=rng, verbose=True)
     buffer = []
@@ -211,7 +211,7 @@ def learn_features(trn_imgs, k, patch_size, rng, n_epochs, background=0.8, kmean
                 # data /= np.std(data, axis=0)
                 kmeans.partial_fit(data)
                 buffer = []
-            if index % 10000 == 0:
+            if index % 10000 == 0 and verbose:
                 print(
                     "Partial fit of %4i out of %i"
                     % (index / 1000, n_epochs * len(trn_imgs) / 1000)
@@ -221,11 +221,10 @@ def learn_features(trn_imgs, k, patch_size, rng, n_epochs, background=0.8, kmean
     return kmeans.cluster_centers_.reshape((-1,) + patch_size), kmeans
 
 
-def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False):
-    features_shape = (
-        1 + 2 * Fs,
-        1 + 2 * Fs,
-    )
+def load_or_compute_features(
+    run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False
+):
+    features_shape = (1 + 2 * Fs, 1 + 2 * Fs)
     try:
         features = pickle.load(open(f"whatwhere/pickles/{run_name}__features.p", "rb"))
         print(f"loaded features from pickles/{run_name}__features.p")
@@ -245,17 +244,20 @@ def load_or_compute_features(run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8, pl
 
 
 def load_or_compute_codes(
-    run_name, trn_imgs, k, Q, features, T_what, wta, labels, plot=False
+    run_name, trn_imgs, k, Q, features, T_what, wta, labels, plot=False, verbose=False
 ):
 
     try:
-        codes_csr = csr_matrix(pickle.load(open(f"whatwhere/pickles/{run_name}__codes.p", "rb")), dtype=np.ushort)
+        codes_csr = csr_matrix(
+            pickle.load(open(f"whatwhere/pickles/{run_name}__codes.p", "rb")),
+            dtype=np.ushort,
+        )
         print(f"loaded codes from pickle: pickles/{run_name}__codes.p")
     except (OSError, IOError) as _:
-        print("generating codes")
+        print("generating codes ...")
         codes_np = np.zeros((trn_imgs.shape[0], k * Q ** 2))
         for i in range(trn_imgs.shape[0]):  # for all images
-            if i % 1000 == 0:
+            if i % 1000 == 0 and verbose:
                 print(i / 1000, " out of ", trn_imgs.shape[0] / 1000)
             img = trn_imgs[i]
             a = mu_ret(img, features, T_what, wta=wta)
@@ -271,13 +273,24 @@ def load_or_compute_codes(
         pickle.dump(codes_csr, open(f"whatwhere/pickles/{run_name}__codes.p", "wb"))
         print(f"saving codes to pickles/{run_name}__codes.p")
 
-    print(
-        f"""Coded set sparsity = {codes_csr.nnz/ (codes_csr.shape[0] * codes_csr.shape[1])}
-    """
-    )
+    sums = csr_matrix.sum(codes_csr, axis=1)
+    max = np.max(sums)
+
+    AS = codes_csr.nnz / (codes_csr.shape[0] * codes_csr.shape[1])
+    densest = np.max(csr_matrix.sum(codes_csr, axis=1)) / codes_csr.shape[1]
+
+    if verbose:
+        print(
+            f"""Coded set:
+                avg sparsity = {AS}
+                densest (%B) = {densest}
+        """
+        )
 
     if plot:
-        plot_examples(trn_imgs, codes_csr, features, k, Q, run_name, "C", num_examples=3)
+        plot_examples(
+            trn_imgs, codes_csr, features, k, Q, run_name, "C", num_examples=3
+        )
         plot_mnist_codes_activity(trn_imgs, codes_csr, k, Q, run_name, "C")
         plot_feature_maps(codes_csr, k, Q, run_name, "C")
         plot_feature_maps_overlaped(trn_imgs, codes_csr, k, Q, run_name, "C")
@@ -286,4 +299,4 @@ def load_or_compute_codes(
         plot_sparse_dense_examples(trn_imgs, codes_csr, features, k, Q, run_name, "C")
         plot_sparsity_distribution(codes_csr, k, Q, run_name, "C")
 
-    return codes_csr
+    return (codes_csr, AS, densest)

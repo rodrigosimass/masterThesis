@@ -15,7 +15,9 @@ def load_idxfile(filename):
     return data
 
 
-def read_mnist(dim=[28, 28], n_train=60000, n_test=1000, one_hot=False):
+def read_mnist(
+    dim=[28, 28], n_train=60000, n_test=1000, one_hot=False, relative_path="./"
+):
 
     """
     Read mnist train and test data.
@@ -23,7 +25,7 @@ def read_mnist(dim=[28, 28], n_train=60000, n_test=1000, one_hot=False):
     Labels are one-hot coded if flag is True.
     """
 
-    path = "mnist/data/"
+    path = relative_path + "mnist/data/"
 
     train_imgs = load_idxfile(path + "train-images-idx3-ubyte")
     train_imgs = train_imgs / 255.0

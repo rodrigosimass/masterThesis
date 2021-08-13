@@ -297,7 +297,6 @@ def plot_class_activity_1D(codes, labels, k, Q, run_name, set):
     labels = labels[:size]
     Tr = Tr.reshape(size, k * Q * Q)
 
-
     fig, axs = plt.subplots(10, 1, sharex=True)
 
     fig.suptitle(f"Average pixel activity per class ({set} set)", fontsize=16)
@@ -342,3 +341,14 @@ def plot_class_activity_2D(codes, labels, k, Q, run_name, set):
         ax.set_title(f"({i})s={str}")
 
     plt.savefig(f"whatwhere/img/{run_name}__WW_classes_2D_{set}.png")
+
+
+def plot_multiple_line_charts(x_l, y_l_l, label_l, title, xlabel, ylabel):
+    for y_l, label in zip(y_l_l, label_l):
+        plt.plot(x_l, y_l, label=label)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.ylim((0, 0.1))
+    plt.legend()
+    plt.savefig(f"whatwhere/img/{title}_multiple_runs.png")

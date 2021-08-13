@@ -39,7 +39,7 @@ def read_mnist(dim=[28, 28], n_train=60000, n_test=1000, one_hot=False):
 
     train_imgs = load_idxfile(path + "train-images-idx3-ubyte")
     train_imgs = train_imgs / 255.0
-    train_imgs = train_imgs.reshape(-1, dim[0] * dim[1])
+    train_imgs = train_imgs.reshape(-1, dim[0], dim[1])
 
     train_lbls = load_idxfile(path + "train-labels-idx1-ubyte")
     if one_hot:
@@ -48,7 +48,7 @@ def read_mnist(dim=[28, 28], n_train=60000, n_test=1000, one_hot=False):
 
     test_imgs = load_idxfile(path + "t10k-images-idx3-ubyte")
     test_imgs = test_imgs / 255.0
-    test_imgs = test_imgs.reshape(-1, dim[0] * dim[1])
+    test_imgs = test_imgs.reshape(-1, dim[0], dim[1])
 
     test_lbls = load_idxfile(path + "t10k-labels-idx1-ubyte")
 

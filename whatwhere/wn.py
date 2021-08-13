@@ -21,11 +21,14 @@ def retreive(codes, factor_of_stored, W):
 
     ret = np.zeros(codes.shape)
 
-    s = csr_matrix.dot(codes,W).astype(np.int64)
+    s = csr_matrix.dot(codes, W).astype(np.int64)
 
     for i in range(codes.shape[0]):  # for all retreival cues
         aux = s[i].toarray()
         m = np.max(aux)
+        if m == 0:
+            print("WARNING: max no retrieve deu 0")
+            print(i)
         aux1 = aux - m
         ret[i] = H(aux1)
 
@@ -45,13 +48,13 @@ def performance(cues, ret):
 
 # X_trn: binary trainning set; M:
 def train(codes_csr, num_stored, verbose=0):
-    print("codes_csr shape: ", codes_csr.shape)
+    print("codes_set shape: ", codes_csr.shape)
 
     n = codes_csr.shape[1]  # size of patterns to Memorize
     print("training willshaw of size ", n, "*", n)
 
     addresses = codes_csr[:num_stored]
-    print("addresses shape: ", addresses.shape)
+    print(f"storing {num_stored} codes")
     will = np.zeros((n, n))
 
     for a in addresses:  # for each pattern to store in will
@@ -67,8 +70,8 @@ def train(codes_csr, num_stored, verbose=0):
     return will
 
 
-def load_or_compute_will(run_name, codes_csr, factor_of_stored):
-    num_stored = codes_csr.shape[1] * factor_of_stored
+def load_or_compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
+    num_stored = 784 * factor_of_stored
     try:
         will = pickle.load(
             open(f"whatwhere/pickles/{run_name}_fac{factor_of_stored}__will.p", "rb")
@@ -88,15 +91,18 @@ def load_or_compute_will(run_name, codes_csr, factor_of_stored):
             f"saving trained willshaw to pickles/{run_name}_fac{factor_of_stored}__will.p"
         )
 
-    if np.array_equal(will_csr.toarray(), (will_csr.toarray()).T):
-        print("[OK] Willshaw matrix is symmetric")
+    sparsity = will_csr.nnz / (will_csr.shape[0] * will_csr.shape[1])
 
-    print(
-        f"""W martix sparsity = {will_csr.nnz/ (will_csr.shape[0] * will_csr.shape[1])}
-    """
-    )
+    if verbose:
+        if np.array_equal(will_csr.toarray(), (will_csr.toarray()).T):
+            print("[OK] Willshaw matrix is symmetric")
 
-    return will_csr
+        print(
+            f"""W martix sparsity = {sparsity}
+        """
+        )
+
+    return (will_csr, sparsity)
 
 
 def load_or_compute_ret(
@@ -110,6 +116,7 @@ def load_or_compute_ret(
     Q,
     factor_of_stored,
     plot=False,
+    verbose=False,
 ):
     set_id = "R" + "_fac" + str(factor_of_stored)
 
@@ -131,7 +138,9 @@ def load_or_compute_ret(
         print(f"saving ret to pickles/{run_name}_fac{factor_of_stored}__ret.p")
 
     if plot:
-        plot_examples(trn_imgs, ret_csr, features, k, Q, run_name, set_id, num_examples=3)
+        plot_examples(
+            trn_imgs, ret_csr, features, k, Q, run_name, set_id, num_examples=3
+        )
         plot_mnist_codes_activity(trn_imgs, ret_csr, k, Q, run_name, set_id)
         plot_feature_maps(ret_csr, k, Q, run_name, set_id)
         plot_feature_maps_overlaped(trn_imgs, ret_csr, k, Q, run_name, set_id)
@@ -140,9 +149,14 @@ def load_or_compute_ret(
         plot_sparse_dense_examples(trn_imgs, ret_csr, features, k, Q, run_name, set_id)
         plot_sparsity_distribution(ret_csr, k, Q, run_name, set_id)
 
-    print(
-        f"""Retrieved set sparsity = {ret_csr.nnz/ (ret_csr.shape[0] * ret_csr.shape[1])}
-    """
-    )
+    AS = ret_csr.nnz / (ret_csr.shape[0] * ret_csr.shape[1])
+    densest = np.max(csr_matrix.sum(ret_csr, axis=1)) / ret_csr.shape[1]
+    if verbose:
+        print(
+            f"""Coded set:
+                avg sparsity = {AS}
+                densest (%B) = {densest}
+        """
+        )
 
-    return ret_csr
+    return (ret_csr, AS, densest)

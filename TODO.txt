@@ -1,3 +1,4 @@
 0: getting familiar with the code
-    [] experiment with winner takes all
-    [] 
+    [] experiment with winner takes all 
+1: Willshaw and whatwhere codes
+    [] guardar versão binaria do MNIST na willshaw e medir retrive error

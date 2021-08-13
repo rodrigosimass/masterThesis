@@ -1,8 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "./mnist, ./whatwhere, ./willshaw, ./baseline, ./ae"
-    ],
-    "python.analysis.extraPaths": [
-        "./mnist, ./whatwhere, ./willshaw, ./baseline, ./ae"
-    ]
-}

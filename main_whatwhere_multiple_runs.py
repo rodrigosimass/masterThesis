@@ -4,128 +4,97 @@ from util.willshaw.memory import *
 from util.willshaw.classifier import *
 from util.mnist.loader import *
 from util.willshaw.plot import *
-
-
-def run(
-    run_name,
-    trn_imgs,
-    k,
-    Fs,
-    rng,
-    n_epochs,
-    b,
-    Q,
-    T_what,
-    wta,
-    trn_lbls,
-    factor_of_stored,
-    make_plots,
-):
-    run_name += "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-    features = load_or_compute_features(
-        run_name, trn_imgs, k, Fs, rng, n_epochs, b=b, plot=make_plots
-    )
-
-    run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
-    codes_csr, coded_AS, coded_densest = load_or_compute_codes(
-        run_name, trn_imgs, k, Q, features, T_what, wta, trn_lbls, plot=make_plots
-    )
-
-    will_csr, will_S = load_or_compute_will(run_name, codes_csr, factor_of_stored)
-
-    ret_csr, ret_AS, ret_densest = load_or_compute_ret(
-        trn_imgs,
-        features,
-        run_name,
-        codes_csr,
-        will_csr,
-        trn_lbls,
-        k,
-        Q,
-        factor_of_stored,
-        plot=make_plots,
-    )
-
-    num_stored = 784 * factor_of_stored
-    class_error = simple_1NN_classifier(
-        ret_csr, codes_csr, trn_lbls, num_stored, verbose=True
-    )
-
-    return (coded_AS, coded_densest, ret_AS, ret_densest, will_S, class_error)
+import wandb
 
 
 rng = np.random.RandomState(0)  # reproducible
-""" PARAMETERS """
+""" Fixed params """
 k = 20  # number of k-means centroids
 Q = 21  # size of the final object space grid
 n_epochs = 5  # for the k means feature detection
-b = 0.9  # minimum activity of the filters: prevents empty feature detection
+b = 0.8  # minimum activity of the filters: prevents empty feature detection
 wta = True  # winner takes all
 
-make_plots = False
-small_test = False
+""" Variable params """
+list_Fs = [1, 2]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
+list_Tw = [0.8, 0.9, 0.95]  # Treshod for keeping or discarding a detected feature
+step = 5000  # number of patterns stored in willshaw at a time
 
-if small_test:
-    trn_imgs, trn_lbls, _, _ = read_mnist(n_train=6000)
-else:
-    trn_imgs, trn_lbls, _, _ = read_mnist(n_train=60000)
+trn_imgs, trn_lbls, _, _ = read_mnist(n_train=60000)
 
-list_Fs = [1, 2, 3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-list_Tw = [
-    0.7,
-    0.75,
-    0.8,
-    0.85,
-    0.9,
-    0.95,
-]  # Treshod for keeping or discarding a detected feature
-list_fos = [1, 3, 5, 6, 7]  # stored patterns
-
-f = open("results/multiple_runs.csv", "w")
-f.write(
-    "k,n_epochs,b,Q,wta,Fs,T_what,factor_of_stored,Coded_AS,Coded_%B,Ret_AS,Ret_%B,Will_S,Class_error\n"
-)
-
-l_will_S = []
-l_l_class_error = []
-l_labels = []
+n_runs = len(list_Fs) * len(list_Tw) * (60000 / step)
+idx = 0
 
 for Fs in list_Fs:
     for T_what in list_Tw:
-        l_class_error = []
-        for factor_of_stored in list_fos:
-            run_name = ""
-            line = f"{k},{n_epochs},{b},{Q},{wta},{Fs},{T_what},{factor_of_stored},"
-            if small_test:
-                run_name += "small_"
-            coded_AS, coded_densest, ret_AS, ret_densest, will_S, class_error = run(
-                run_name,
-                trn_imgs,
-                k,
-                Fs,
-                rng,
-                n_epochs,
-                b,
-                Q,
-                T_what,
-                wta,
-                trn_lbls,
-                factor_of_stored,
-                make_plots,
+
+        run_name = (
+            "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
+        )
+        features = load_or_compute_features(
+            run_name, trn_imgs, k, Fs, rng, n_epochs, b=b
+        )
+
+        run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
+        codes, coded_AS, coded_densest = load_or_compute_codes(
+            run_name,
+            trn_imgs,
+            k,
+            Q,
+            features,
+            T_what,
+            wta,
+            trn_lbls,
+        )
+
+        """ wandb.init(
+            project="whatwhere",
+            entity="rodrigosimass",
+            config={
+                "km_k": k,
+                "km_epochs": n_epochs,
+                "km_wta": wta,
+                "km_b": b,
+                "km_Fs": Fs,
+                "ww_Q": Q,
+                "ww_Twhat": T_what,
+                "codes_AS": coded_AS,
+                "codes_%B": coded_densest,
+            },
+        ) """
+
+        will = None
+        ret = None
+        for num_stored in range(step, 60000 + 1, step):
+            idx += 1
+            print(f"{idx} out of {n_runs}")
+
+            new_data = codes[num_stored - step : num_stored]
+
+            will, will_S = incremental_train(new_data, will)
+
+            ret, ret_AS, ret_densest = incremental_retreive(new_data, will, ret)
+
+            class_error = simple_1NN_classifier(
+                ret, codes, trn_lbls, num_stored, verbose=True
             )
 
-            l_class_error.append(class_error)
+            err_perfRet = performance_perfect_ret(codes, ret, verbose=True)
+            err_infoLoss, err_noise = performance_loss_noise(codes, ret, verbose=True)
+            err_avgErr = performance_avg_error(codes, ret, verbose=True)
 
-            line += f"{round(coded_AS,4)},{round(coded_densest,4)},{round(ret_AS,4)},{round(ret_densest,4)},{round(will_S,4)},{round(class_error,4)}\n"
-            f.write(line)
-        l_l_class_error.append(l_class_error)
-        l_labels.append(f"Fs={Fs},%B={round(coded_AS,4)}")
+            """ wandb.log(
+                {
+                    "ret_AS": ret_AS,
+                    "ret_%B": ret_densest,
+                    "will_S": will_S,
+                    "err_1NN": class_error,
+                    "err_perfRet": err_perfRet,
+                    "err_infoLoss": err_infoLoss,
+                    "err_noise": err_noise,
+                    "err_avgErr": err_avgErr,
+                },
+                step=num_stored,
+            ) """
 
-""" plot_multiple_line_charts(
-    list_fos,
-    l_l_class_error,
-    l_labels,
-    "classification_error",
-    "factor of stored",
-    "classification error",
-) """
+        """ wandb.finish() """

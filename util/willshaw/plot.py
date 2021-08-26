@@ -9,4 +9,4 @@ def plot_multiple_line_charts(x_l, y_l_l, label_l, title, xlabel, ylabel):
     plt.ylabel(ylabel)
     plt.ylim((0, 0.1))
     plt.legend()
-    plt.savefig(f"whatwhere/img/{title}_multiple_runs.png")
+    plt.savefig(f"img/willshaw/{title}_multiple_runs.png")

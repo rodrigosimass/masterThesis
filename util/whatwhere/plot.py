@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from util import *
 import random
 import numpy as np
+from ..basic_utils import best_layout, binary_sparsity
 
 rand = 10
 

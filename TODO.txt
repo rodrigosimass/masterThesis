@@ -6,8 +6,8 @@
 Housekeeping:
 [] guardar matrizes de bools
 [x] mudar nome dos ficheiros
-[] usar o weights and biases
-[] retirar plots das funcoes compute or load, meter essa logica no main
+[x] usar o weights and biases
+[x] retirar plots das funcoes compute or load, meter essa logica no main
 
 
 Question:

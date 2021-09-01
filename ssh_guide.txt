@@ -1,0 +1,18 @@
+ssh rodrigo@146.193.224.245
+
+tmux   : cria um session nova
+tmux a :para connectar
+
+ctr b para commandos tmux
+d : para desconectar
+w : para ver as sessions todas
+
+$ : rename session
+, : rename window
+c : create window
+x : matar window
+
+n next window
+p previous window
+% split vertically
+" split horizontally

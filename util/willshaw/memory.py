@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pickle
 from scipy.sparse import csr_matrix, vstack
 from .plot import *
+from .classifier import *
 
 
 def train(codes_csr, num_stored, verbose=False):
@@ -85,9 +86,7 @@ def incremental_retreive(new_cues, W, prev_ret):
     return ret, AS, densest
 
 
-def retreive(codes, factor_of_stored, W):
-
-    num_stored = 784 * factor_of_stored
+def retreive(codes, num_stored, W):
 
     codes = codes[:num_stored]
 
@@ -105,7 +104,11 @@ def retreive(codes, factor_of_stored, W):
             # zero activations
             ret[i] = 0
 
-    return csr_matrix(ret)
+    ret = csr_matrix(ret)
+    AS = ret.nnz / (ret.shape[0] * ret.shape[1])
+    densest = np.max(csr_matrix.sum(ret, axis=1)) / ret.shape[1]
+
+    return ret, AS, densest
 
 
 def performance_perfect_ret(codes, ret, verbose=False):
@@ -126,9 +129,9 @@ def performance_avg_error(codes, ret, verbose=False):
     for i in range(ret.shape[0]):
         errors += np.sum(codes[i] != ret[i])
 
-    avg_error = errors / (codes.shape[0] * codes.shape[1])
+    avg_error = errors / (ret.shape[0] * ret.shape[1])
     if verbose:
-        print(f"Avg Error: {avg_error}")
+        print(f"Avg Error: {avg_error }")
 
     return avg_error
 
@@ -141,7 +144,7 @@ def performance_loss_noise(codes, ret, verbose=False):
         loss += np.count_nonzero(diff == 1)
         noise += np.count_nonzero(diff == -1)
 
-    total = codes.shape[0] * codes.shape[1]
+    total = ret.shape[0] * ret.shape[1]
 
     if verbose:
         print(f"Information loss: {loss} ; Added nosie: { noise}")
@@ -149,115 +152,9 @@ def performance_loss_noise(codes, ret, verbose=False):
     return (loss / total, noise / total)
 
 
-def load_or_compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
-    num_stored = 784 * factor_of_stored
-    try:
-        will = pickle.load(
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "rb")
-        )
-        if verbose:
-            print(
-                f"loaded will from pickle: pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-    except (OSError, IOError) as _:
-        will = train(codes_csr, num_stored)
-        pickle.dump(
-            will,
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "wb"),
-        )
-        if verbose:
-            print(
-                f"saving trained willshaw to pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-
-    sparsity = will.nnz / (will.shape[0] * will.shape[1])
-
-    if verbose:
-        if np.array_equal(will.toarray(), (will.toarray()).T):
-            print("[OK] Willshaw matrix is symmetric")
-
-        print(
-            f"""W martix sparsity = {sparsity}
-        """
-        )
-
-    return (will, sparsity)
-
-
-def load_or_compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
-    num_stored = 784 * factor_of_stored
-    try:
-        will = pickle.load(
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "rb")
-        )
-        if verbose:
-            print(
-                f"loaded will from pickle: pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-    except (OSError, IOError) as _:
-        will = train(codes_csr, num_stored)
-        pickle.dump(
-            will,
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "wb"),
-        )
-        if verbose:
-            print(
-                f"saving trained willshaw to pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-
-    sparsity = will.nnz / (will.shape[0] * will.shape[1])
-
-    if verbose:
-        if np.array_equal(will.toarray(), (will.toarray()).T):
-            print("[OK] Willshaw matrix is symmetric")
-
-        print(
-            f"""W martix sparsity = {sparsity}
-        """
-        )
-
-    return (will, sparsity)
-
-
-def load_or_compute_ret(
-    trn_imgs,
-    features,
-    run_name,
-    codes,
-    will,
-    labels,
-    k,
-    Q,
-    factor_of_stored,
-    verbose=False,
-):
-    set_id = "R" + "_fac" + str(factor_of_stored)
-
-    try:
-        ret = pickle.load(
-            open(f"pickles/{run_name}_fac{factor_of_stored}__ret.p", "rb")
-        )
-        if verbose:
-            print(
-                f"loaded ret from pickle: pickles/{run_name}_fac{factor_of_stored}__ret.p"
-            )
-    except (OSError, IOError) as _:
-        ret = retreive(codes, factor_of_stored, will)
-        pickle.dump(
-            ret,
-            open(f"pickles/{run_name}_fac{factor_of_stored}__ret.p", "wb"),
-        )
-        if verbose:
-            print(f"saving ret to pickles/{run_name}_fac{factor_of_stored}__ret.p")
-
-    AS = ret.nnz / (ret.shape[0] * ret.shape[1])
-    densest = np.max(csr_matrix.sum(ret, axis=1)) / ret.shape[1]
-    if verbose:
-        print(
-            f"""Coded set:
-                avg sparsity = {AS}
-                densest (%B) = {densest}
-        """
-        )
-
-    return (ret, AS, densest)
+def performance(codes, ret, trn_lbls, verbose=False):
+    err_avg = performance_avg_error(codes, ret, verbose)
+    err_loss, err_noise = performance_loss_noise(codes, ret, verbose)
+    err_perf = performance_perfect_ret(codes, ret, verbose)
+    err_1nn = simple_1NN_classifier(ret, codes, trn_lbls, verbose=True)
+    return (err_perf, err_avg, err_loss, err_noise, err_1nn)

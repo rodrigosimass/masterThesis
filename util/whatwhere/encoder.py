@@ -6,6 +6,8 @@ import pickle
 from scipy.sparse import csr_matrix
 from .plot import *
 import sys
+import torchvision as torchv
+import torch
 
 # same padding
 def to_windows(img, window_shape, step_shape, dims=None):
@@ -137,7 +139,7 @@ def translation(features, C_x, C_y):
 
 def scale(features, rad):
     if rad == 0:
-        #TODO: VER COM O lUIS SE ISTO E NA BOA
+        # TODO: VER COM O lUIS SE ISTO E NA BOA
         rad = 1
     pos = np.copy(features)
     M = np.diag([1.0 / rad, 1.0 / rad])
@@ -230,8 +232,9 @@ def learn_features(
 
 
 def load_or_compute_features(
-    run_name, trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False, verbose=False
+    trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False, verbose=False
 ):
+    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
     try:
         features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
         if verbose:
@@ -271,44 +274,13 @@ def learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta):
     return csr_matrix(codes)
 
 
-def load_or_compute_codes(
-    run_name, trn_imgs, k, Q, features, T_what, wta, labels, plot=False, verbose=False
-):
+def get_codes_examples(codes, k, Q, num_examples=10):
+    examples = codes[:num_examples].toarray()
+    examples = examples.reshape(num_examples, k, Q, Q)
+    examples = np.sum(examples, axis=1)
+    examples.reshape(num_examples, Q, Q)
 
-    try:
-        codes = pickle.load(open(f"pickles/{run_name}__codes.p", "rb"))
-        if verbose:
-            print(f"loaded codes from pickle: pickles/{run_name}__codes.p")
-    except (OSError, IOError) as _:
-        codes = learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta)
-        if verbose:
-            print(f"saving codes to pickles/{run_name}__codes.p")
-        pickle.dump(
-            codes,
-            open(f"pickles/{run_name}__codes.p", "wb"),
-        )
-
-    AS = codes.nnz / (codes.shape[0] * codes.shape[1])
-    densest = np.max(csr_matrix.sum(codes, axis=1)) / codes.shape[1]
-
-    if verbose:
-        print(
-            f"""Coded set:
-                avg sparsity = {AS}
-                densest (%B) = {densest}
-        """
-        )
-
-    """ if plot:
-        plot_examples(
-            trn_imgs, codes, features, k, Q, run_name, "C", num_examples=3
-        )
-        plot_mnist_codes_activity(trn_imgs, codes, k, Q, run_name, "C")
-        plot_feature_maps(codes, k, Q, run_name, "C")
-        plot_feature_maps_overlaped(trn_imgs, codes, k, Q, run_name, "C")
-        plot_class_activity_2D(codes, labels, k, Q, run_name, "C")
-        plot_class_activity_1D(codes, labels, k, Q, run_name, "C")
-        plot_sparse_dense_examples(trn_imgs, codes, features, k, Q, run_name, "C")
-        plot_sparsity_distribution(codes, k, Q, run_name, "C") """
-
-    return (codes, AS, densest)
+    tensor = torch.from_numpy(examples)
+    tensor = torch.unsqueeze(tensor, dim=1)
+    grid = torchv.utils.make_grid(tensor, normalize=True, nrow=10, pad_value=1)
+    return grid

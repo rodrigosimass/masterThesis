@@ -12,6 +12,18 @@ def store_ret(ret, k, Q, num_stored, Fs, n_epochs, b, T_what):
     )
 
 
+def load_ret(k, Q, num_stored, Fs, n_epochs, b, T_what):
+    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
+    run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
+
+    try:
+        ret = pickle.load(open(f"pickles/{run_name}_n{num_stored}__ret.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}_n{num_stored}__ret.p>> not found...")
+
+    return ret
+
+
 def load_or_compute_features(
     trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=False
 ):

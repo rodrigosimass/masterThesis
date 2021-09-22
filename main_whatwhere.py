@@ -24,7 +24,7 @@ list_Tw = [
     0.95,
 ]  # Treshod for keeping or discarding a detected feature
 
-data_step = 1000
+data_step = 6000
 data_max = 60000
 
 trn_imgs, trn_lbls, tst_imgs, _ = read_mnist(n_train=60000)
@@ -43,7 +43,7 @@ for Fs in list_Fs:
         )
         if use_wandb:
             wandb.init(
-                project="whatwhere_mock",
+                project="whatwhere",
                 entity="rodrigosimass",
                 config={
                     "km_K": K,

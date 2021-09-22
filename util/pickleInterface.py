@@ -8,7 +8,7 @@ def store_ret(ret, k, Q, num_stored, Fs, n_epochs, b, T_what):
     run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
     pickle.dump(
         ret,
-        open(f"pickles/{run_name}_n{num_stored}__ret.p", "wb"),
+        open(f"pickles/{run_name}__ret.p", "wb"),
     )
 
 

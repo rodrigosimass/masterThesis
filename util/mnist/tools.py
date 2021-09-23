@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def get_1_per_class(imgs, lbls):
+    l_examples = []
+    for i in range(10):
+        l_examples.append(imgs[lbls == i][0])
+    return np.array(l_examples)
+
+
 def load_idxfile(filename):
     import struct
 

@@ -231,9 +231,7 @@ def learn_features(
     return kmeans.cluster_centers_.reshape((-1,) + patch_size), kmeans
 
 
-def load_or_compute_features(
-    trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False, verbose=False
-):
+def compute_features(trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False, verbose=False):
     run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
     try:
         features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))

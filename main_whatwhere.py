@@ -2,7 +2,7 @@ import numpy as np
 from util.whatwhere.encoder import *
 from util.willshaw.memory import *
 from util.willshaw.classifier import *
-from util.mnist.loader import *
+from util.mnist.tools import *
 from util.willshaw.plot import *
 from util.pickleInterface import *
 import wandb
@@ -36,9 +36,9 @@ use_wandb = True
 
 for Fs in list_Fs:
     for T_what in list_Tw:
-        features = load_or_compute_features(trn_imgs, K, Fs, rng, n_epochs, b)
+        features = compute_features(trn_imgs, K, Fs, rng, n_epochs, b)
 
-        codes, _, coded_AS, coded_densest = load_or_compute_codes(
+        codes, _, coded_AS, coded_densest = compute_codes(
             trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=True
         )
         if use_wandb:

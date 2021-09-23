@@ -1,4 +1,4 @@
-from util.mnist.loader import *
+from util.mnist.tools import *
 from util.mnist.plot import *
 
 image_size = [28, 28]

@@ -3,7 +3,7 @@ from .whatwhere.encoder import *
 from .willshaw.memory import *
 
 
-def store_ret(ret, k, Q, num_stored, Fs, n_epochs, b, T_what):
+def store_ret(ret, k, Q, Fs, n_epochs, b, T_what):
     run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
     run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
     pickle.dump(
@@ -12,21 +12,33 @@ def store_ret(ret, k, Q, num_stored, Fs, n_epochs, b, T_what):
     )
 
 
-def load_ret(k, Q, num_stored, Fs, n_epochs, b, T_what):
-    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-    run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
-
+def load_ret(run_name):
     try:
-        ret = pickle.load(open(f"pickles/{run_name}_n{num_stored}__ret.p", "rb"))
+        ret = pickle.load(open(f"pickles/{run_name}__ret.p", "rb"))
     except (OSError, IOError) as _:
-        print(f"ERROR: file <<pickles/{run_name}_n{num_stored}__ret.p>> not found...")
+        print(f"ERROR: file <<pickles/{run_name}__ret.p>> not found...")
+        exit(1)
 
     return ret
 
 
-def load_or_compute_features(
-    trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=False
-):
+def load_codes(run_name):
+    try:
+        trn_ww = pickle.load(open(f"pickles/{run_name}__ww_trn.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__ww_trn.p>> not found...")
+        exit(1)
+
+    try:
+        tst_ww = pickle.load(open(f"pickles/{run_name}__ww_tst.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__ww_tst.p>> not found...")
+        exit(1)
+
+    return (trn_ww, tst_ww)
+
+
+def compute_features(trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=False):
     run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
     try:
         features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
@@ -44,7 +56,7 @@ def load_or_compute_features(
     return features
 
 
-def load_or_compute_codes(
+def compute_codes(
     trn_imgs,
     tst_imgs,
     k,
@@ -103,7 +115,7 @@ def load_or_compute_codes(
     return (codes, codes_tst, AS, densest)
 
 
-def load_or_compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
+def compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
     num_stored = 784 * factor_of_stored
     try:
         will = pickle.load(
@@ -138,7 +150,7 @@ def load_or_compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
     return (will, sparsity)
 
 
-def load_or_compute_ret(
+def compute_ret(
     run_name,
     codes,
     will,

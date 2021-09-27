@@ -6,6 +6,7 @@ from util.mnist.tools import *
 from util.willshaw.plot import *
 from util.pickleInterface import *
 import wandb
+from util.kldiv import *
 
 rng = np.random.RandomState(0)  # reproducible
 """ Fixed params """
@@ -57,7 +58,7 @@ for Fs in list_Fs:
                     "codes_%B": coded_densest,
                 },
             )
-            example_grid = get_codes_examples(codes, K, Q)
+            example_grid = get_codes_examples(codes.toarray(), K, Q)
             examples = wandb.Image(example_grid, caption="Examples of codes")
             wandb.log({"cod_examples": examples})
 
@@ -70,6 +71,10 @@ for Fs in list_Fs:
             will, will_S = incremental_train(new_data, will)
 
             ret, ret_AS, ret_densest = retreive(codes, num_stored, will)
+            ret_kl = kl_div_set(ret.toarray(), verbose=False)
+            codes_kl = kl_div_set(codes[:num_stored].toarray(), verbose=False)
+            ret_kl_n = kl_div_set_2(ret.toarray(), verbose=False)
+            codes_kl_n = kl_div_set_2(codes[:num_stored].toarray(), verbose=False)
             err_perfRet, err_avgErr, err_infoLoss, err_noise, err_1nn = performance(
                 codes, ret, trn_lbls, verbose=True
             )
@@ -79,8 +84,12 @@ for Fs in list_Fs:
                         "will_S": will_S,
                         "ret_AS": ret_AS,
                         "ret_%B": ret_densest,
+                        "ret_kl": ret_kl,
+                        "ret_kl_n": ret_kl_n,
                         "cod_AS": coded_AS,
                         "cod_%B": coded_densest,
+                        "codes_kl": codes_kl,
+                        "codes_kl_n": codes_kl_n,
                         "err_1NN": err_1nn,
                         "err_perfRet": err_perfRet,
                         "err_infoLoss": err_infoLoss,
@@ -89,9 +98,9 @@ for Fs in list_Fs:
                     },
                     step=num_stored,
                 )
-        store_ret(ret, K, Q, data_max, Fs, n_epochs, b, T_what)
+        store_ret(ret, K, Q, Fs, n_epochs, b, T_what)
         if use_wandb:
-            example_grid = get_codes_examples(ret, K, Q)
+            example_grid = get_codes_examples(ret.toarray(), K, Q)
             examples = wandb.Image(example_grid, caption="Examples of retrievals")
             wandb.log({"ret_examples": examples})
             wandb.finish()

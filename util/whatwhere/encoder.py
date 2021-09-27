@@ -273,7 +273,7 @@ def learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta):
 
 
 def get_codes_examples(codes, k, Q, num_examples=10):
-    examples = codes[:num_examples].toarray()
+    examples = np.array(codes[:num_examples])
     examples = examples.reshape(num_examples, k, Q, Q)
     examples = np.sum(examples, axis=1)
     examples.reshape(num_examples, Q, Q)

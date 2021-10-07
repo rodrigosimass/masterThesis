@@ -22,7 +22,7 @@ def js_divergence(p, q):
 # p distribution is NOT normalized (sum might not yield 1.0)
 def kl_div_set(patterns, verbose=0):
     activity = np.count_nonzero(patterns == 1, axis=0)
-    p = activity / activity.shape[0]
+    p = activity / patterns.shape[0]
     if verbose > 1:
         print("p:")
         print(p)
@@ -50,7 +50,9 @@ def kl_div_set_2(patterns, verbose=False):
         print(p)
         print(f"sum = {np.sum(p)}")
 
-    q = np.full(p.shape, np.sum(p) / p.size)
+    sparsity = np.count_nonzero(patterns == 1) / patterns.size
+
+    q = np.full(p.shape, sparsity)
     if verbose:
         print("q:")
         print(q)

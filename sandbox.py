@@ -79,7 +79,7 @@ def performance(cues, ret):
 """ parameters """
 M = 1000  # number of patterns
 n = 10  # size of patterns
-sparsity = 0.1
+sparsity = 0.01
 
 patterns = generate_random_sparse_patterns(M, n, sparsity)
 

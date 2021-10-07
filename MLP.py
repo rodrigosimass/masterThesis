@@ -8,23 +8,28 @@ import matplotlib.pyplot as plt
 import wandb
 import torchvision as torchv
 import sys
+from util.pytorchtools import EarlyStopping
+from util.whatwhere.encoder import get_codes_examples
 
 
 class MLP2H(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, input_dim, output_dim, hidden_dim):
         super().__init__()
-        self.decoder_h1 = nn.Linear(in_features=20 * 21 * 21, out_features=4000)
-        self.decoder_h2 = nn.Linear(in_features=4000, out_features=2000)
-        self.decoder_out = nn.Linear(in_features=2000, out_features=28 * 28)
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.hidden_dim = hidden_dim
+        current_dim = input_dim
+        self.layers = nn.ModuleList()
+        for hdim in hidden_dim:
+            self.layers.append(nn.Linear(current_dim, hdim))
+            current_dim = hdim
+        self.layers.append(nn.Linear(current_dim, output_dim))
 
-    def forward(self, features):
-        activation = self.decoder_h1(features)
-        activation = torch.relu(activation)
-        code = self.decoder_h2(activation)
-        code = torch.relu(code)
-        activation = self.decoder_out(code)
-        reconstructed = torch.relu(activation)
-        return reconstructed
+    def forward(self, x):
+        for layer in self.layers[:-1]:
+            x = torch.relu(layer(x))
+        y = torch.relu(self.layers[-1](x))
+        return y
 
 
 if __name__ == "__main__":
@@ -32,44 +37,35 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
         exit(1)
-    USE_WANDB = bool(sys.argv[1])
+    USE_WANDB = bool(int(sys.argv[1]))
     """ ------------------------------------- """
+    # CODES
     param_id = "k20_Fs2_ep5_b0.8_Q21_Tw0.95"
-    n_epochs = 100
-    lr = 0.0001
+
+    # MLP
+    dim_hid = [2000]
+    dim_in = 20 * 21 * 21
+    dim_out = 28 * 28
+    max_epochs = 100
+    lr = 0.01
     batch_size = 100
+    patience = 10
+    delta = 0.001
     shuffle = False
 
-    if USE_WANDB:
-        wandb.init(
-            project="MLP_small",
-            entity="rodrigosimass",
-            config={
-                "n_hLayers": MLP2H.modules,
-                "n_hUnits": 6000,
-                "lr": lr,
-                "n_epochs": n_epochs,
-                "batch_size": batch_size,
-                "shuffle_data": shuffle,
-            },
-        )
+    # MNIST
+    trn_n = 600
+    val_n = 100  # if (trn_n=60k;val_n=10k), then we will train with 50k and use 10k for valid
 
     imgs, _, _, _ = read_mnist()
     codes, _ = load_codes(param_id)
 
-    imgs = imgs[:600].reshape((600, 28 * 28))
-    codes = codes[:600].toarray()
+    imgs = imgs[:trn_n].reshape((trn_n, 28 * 28))
+    codes = codes[:trn_n].toarray()
 
-    trn_codes, val_codes = random_split(codes, [500, 100])
-    trn_imgs, val_imgs = random_split(imgs, [500, 100])
+    dataset = TensorDataset(torch.Tensor(codes), torch.Tensor(imgs))
 
-    tensor_ti = torch.Tensor(trn_imgs)
-    tensor_tc = torch.Tensor(trn_codes)
-    tensor_vi = torch.Tensor(val_imgs)
-    tensor_vc = torch.Tensor(val_codes)
-
-    trn_dataset = TensorDataset(tensor_tc, tensor_ti)
-    val_dataset = TensorDataset(tensor_vc, tensor_vi)
+    trn_dataset, val_dataset = random_split(dataset, [trn_n - val_n, val_n])
 
     trn_loader = DataLoader(
         trn_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=1
@@ -79,11 +75,29 @@ if __name__ == "__main__":
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MLP2H().to(device)
+    model = MLP2H(input_dim=dim_in, output_dim=dim_out, hidden_dim=dim_hid).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     loss_function = nn.MSELoss()
 
-    for epoch in range(0, n_epochs):
+    if USE_WANDB:
+        wandb.init(
+            project="MLP_small",
+            entity="rodrigosimass",
+            config={
+                "n_hLayers": len(dim_hid),
+                "n_hUnits": dim_hid,
+                "lr": lr,
+                "max_epochs": max_epochs,
+                "batch_size": batch_size,
+                "shuffle_data": shuffle,
+                "patience": patience,
+                "trn_n": trn_n,
+            },
+        )
+
+    if patience > 0:
+        early_stopping = EarlyStopping(patience=patience, verbose=True, delta=delta)
+    for epoch in range(0, max_epochs):
         print(f"Starting epoch {epoch+1}")
 
         # Training
@@ -99,6 +113,7 @@ if __name__ == "__main__":
 
             loss.backward()  # Perform backward pass
             optimizer.step()  # Perform optimization
+        trn_loss = trn_loss / len(trn_loader)
 
         # Validation
         val_loss = 0.0
@@ -106,39 +121,45 @@ if __name__ == "__main__":
             outputs = model(inputs)  # Forward Pass
             loss = loss_function(outputs, targets)
             val_loss += loss.item()
+        val_loss = val_loss / len(val_loader)
 
-        print(
-            f"MSE Loss (train) = {trn_loss}/{len(trn_loader)} = {trn_loss / len(trn_loader)}"
-        )
-        print(
-            f"MSE Loss (validation) = {val_loss}/{len(val_loader)} = {val_loss / len(val_loader)}"
-        )
+        print(f"MSE Loss (train) = {trn_loss} ; MSE Loss (validation) = {val_loss}")
 
+        # Early Stopping
+        if patience > 0:
+            early_stopping(val_loss, model)
+            if early_stopping.early_stop:
+                print("Early stopping")
+                break
+
+        # Log stats
         if USE_WANDB:
 
-            orig = val_imgs[-10:].reshape((10, 28, 28))
-            tensor = torch.from_numpy(orig)
-            tensor = torch.unsqueeze(tensor, dim=1)
+            # ex_target = val_dataset.dataset.tensors[1][-10:].reshape((10, 28, 28))
+            ex_target = targets[-10:].reshape((10, 28, 28))
+            tensor = torch.unsqueeze(ex_target, dim=1)
             grid = torchv.utils.make_grid(tensor, normalize=True, nrow=10, pad_value=1)
-            orig = wandb.Image(grid)
+            ex_target = wandb.Image(grid)
 
-            recon = np.array(outputs.detach())[-10:].reshape((10, 28, 28))
-            tensor = torch.from_numpy(recon)
-            tensor = torch.unsqueeze(tensor, dim=1)
+            """ optimizer.zero_grad()  # Zero the gradients
+            ex_out = model(val_dataset.dataset.tensors[0][-10:]).reshape(
+                (10, 28, 28)
+            )  # forward the examples """
+            ex_out = outputs[-10:].reshape((10, 28, 28))
+            tensor = torch.unsqueeze(ex_out, dim=1)
             grid = torchv.utils.make_grid(tensor, normalize=True, nrow=10, pad_value=1)
-            recon = wandb.Image(grid, caption=f"Epoch {epoch+1}")
+            ex_out = wandb.Image(grid)
 
             wandb.log(
                 {
                     "MSE_train": trn_loss / len(trn_loader),
                     "MSE_valid": val_loss / len(val_loader),
-                    "originals": orig,
-                    "reconstructions": recon,
+                    "n_epochs": epoch,
+                    "Output": ex_out,
+                    "Target": ex_target,
                 },
                 step=epoch,
             )
-
-            wandb.log({"originals": orig})
 
     print("Training done...")
     if USE_WANDB:

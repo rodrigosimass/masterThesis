@@ -12,3 +12,11 @@ Housekeeping:
 
 Question:
 - Os sparse codes têm sempre um numero de active units multiplo de 3, Porquê?
+
+
+[x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
+
+Housekeeping day after meeting:
+[] Aprender a fazer SSH para o pc do Tagus
+[] Correr o código com o CUDA no ubuntu.
+[] Limpar o código e arrumar as experiencias do wandb

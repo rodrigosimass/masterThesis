@@ -20,3 +20,9 @@ Housekeeping day after meeting:
 [] Aprender a fazer SSH para o pc do Tagus
 [] Correr o código com o CUDA no ubuntu.
 [] Limpar o código e arrumar as experiencias do wandb
+
+Depois da meeting de Setembro
+[] Fazer a kl div como deve de ser (normalizada para 1)
+[] Tentar o MLP com zero Hidden layers (perceptron)
+[] Tentar Shannon Entropy
+[] Ver como é que o Fs influencia a distancia no paço de convolution da geração de codigos

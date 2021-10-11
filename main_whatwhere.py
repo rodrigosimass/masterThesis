@@ -25,15 +25,22 @@ list_Tw = [
     0.95,
 ]  # Treshod for keeping or discarding a detected feature
 
+
 data_step = 6000
 data_max = 60000
+
 
 trn_imgs, trn_lbls, tst_imgs, _ = read_mnist(n_train=60000)
 
 n_runs = len(list_Fs) * len(list_Tw) * (data_max / data_step)
 run_idx = 0
 
-use_wandb = True
+""" ------------------------------------- """
+if len(sys.argv) != 2:
+    print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
+    exit(1)
+USE_WANDB = bool(int(sys.argv[1]))
+""" ------------------------------------- """
 
 for Fs in list_Fs:
     for T_what in list_Tw:
@@ -42,9 +49,15 @@ for Fs in list_Fs:
         codes, _, coded_AS, coded_densest = compute_codes(
             trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=True
         )
-        if use_wandb:
+        coded_dist_d, coded_dist_kl, coded_dist_e = measure_data_distribution_set(
+            codes.toarray()
+        )
+        print(
+            f"coded_dist_d={coded_dist_d}, coded_dist_kl={coded_dist_kl}, coded_dist_e={coded_dist_e}"
+        )
+        if USE_WANDB:
             wandb.init(
-                project="whatwhere",
+                project="whatwhere_kldiv",
                 entity="rodrigosimass",
                 config={
                     "km_K": K,
@@ -56,6 +69,9 @@ for Fs in list_Fs:
                     "ww_Twhat": T_what,
                     "codes_AS": coded_AS,
                     "codes_%B": coded_densest,
+                    "codes_dist_d": coded_dist_d,
+                    "codes_dist_kl": coded_dist_kl,
+                    "codes_dist_e": coded_dist_e,
                 },
             )
             example_grid = get_codes_examples(codes.toarray(), K, Q)
@@ -71,25 +87,29 @@ for Fs in list_Fs:
             will, will_S = incremental_train(new_data, will)
 
             ret, ret_AS, ret_densest = retreive(codes, num_stored, will)
-            ret_kl = kl_div_set(ret.toarray(), verbose=False)
-            codes_kl = kl_div_set(codes[:num_stored].toarray(), verbose=False)
-            ret_kl_n = kl_div_set_2(ret.toarray(), verbose=False)
-            codes_kl_n = kl_div_set_2(codes[:num_stored].toarray(), verbose=False)
+            coded_dist_d, coded_dist_kl, coded_dist_e = measure_data_distribution_set(
+                codes[:num_stored].toarray()
+            )
+            ret_dist_d, ret_dist_kl, ret_dist_e = measure_data_distribution_set(
+                ret.toarray()
+            )
             err_perfRet, err_avgErr, err_infoLoss, err_noise, err_1nn = performance(
                 codes, ret, trn_lbls, verbose=True
             )
-            if use_wandb:
+            if USE_WANDB:
                 wandb.log(
                     {
                         "will_S": will_S,
                         "ret_AS": ret_AS,
                         "ret_%B": ret_densest,
-                        "ret_kl": ret_kl,
-                        "ret_kl_n": ret_kl_n,
+                        "ret_dist_d": ret_dist_d,
+                        "ret_dist_kl": ret_dist_kl,
+                        "ret_dist_e": ret_dist_e,
                         "cod_AS": coded_AS,
                         "cod_%B": coded_densest,
-                        "codes_kl": codes_kl,
-                        "codes_kl_n": codes_kl_n,
+                        "cod_dist_d": coded_dist_d,
+                        "cod_dist_kl": coded_dist_kl,
+                        "cod_dist_e": coded_dist_e,
                         "err_1NN": err_1nn,
                         "err_perfRet": err_perfRet,
                         "err_infoLoss": err_infoLoss,
@@ -99,7 +119,7 @@ for Fs in list_Fs:
                     step=num_stored,
                 )
         store_ret(ret, K, Q, Fs, n_epochs, b, T_what)
-        if use_wandb:
+        if USE_WANDB:
             example_grid = get_codes_examples(ret.toarray(), K, Q)
             examples = wandb.Image(example_grid, caption="Examples of retrievals")
             wandb.log({"ret_examples": examples})

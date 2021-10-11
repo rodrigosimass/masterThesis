@@ -1,4 +1,6 @@
 ssh rodrigo@146.193.224.245
+windows command:
+C:/Users/rodrigo/AppData/Local/Programs/Python/Python39/python.exe c:/Users/rodrigo/Desktop/MasterThesis/main_whatwhere.py 0
 
 tmux   : cria um session nova
 tmux a :para connectar

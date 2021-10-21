@@ -26,3 +26,6 @@ Depois da meeting de Setembro
 [] Tentar o MLP com zero Hidden layers (perceptron)
 [] Tentar Shannon Entropy
 [] Ver como é que o Fs influencia a distancia no paço de convolution da geração de codigos
+
+[] Treinar uma deconvolution CNN com as mesmos parametros que geraram os codigos, comparar com aqueles que são obtidos com o KNN do Luis.
+[] Comparar a accuracy do melhor CCN decoder, com um que seja inicializado com os kernels do Luis.

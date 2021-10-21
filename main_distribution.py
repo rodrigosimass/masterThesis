@@ -48,13 +48,14 @@ def plot_dists_kldivs(l_dists, l_names, filename):
             {l_names[i]}  
 
 
-            kl_div = {kl_divergence(d,unif)}
-            entropy = {shannon_entropy(d)}
-            dist to unif = {distance_to_unif(d,unif)}
+            kl_div = {kl_divergence(d,unif):.7f}
+            entropy = {shannon_entropy(d):.7f}
+            dist to unif = {dist_difference(d,unif):.7f}
             """,
+            fontsize=20,
         )
 
-    fig.set_size_inches(15, 10)
+    fig.set_size_inches(20, 15)
     plt.tight_layout()
     plt.savefig(f"img/kldiv/{filename}.png")
 
@@ -64,20 +65,21 @@ def plot_dists_kldivs(l_dists, l_names, filename):
 mnist, _, _, _ = read_mnist(n_train=60000)
 mnist = mnist.reshape((mnist.shape[0], -1))
 s_mnist = mnist[:30000]
-mnist_dist = compute_patterns_dist(mnist)
-s_mnist_dist = compute_patterns_dist(s_mnist)
+mnist_dist, _ = distributions(mnist)
+s_mnist_dist, _ = distributions(s_mnist)
 
 # WHATWHERE
 param_id = "k20_Fs2_ep5_b0.8_Q21_Tw0.95"
 codes = load_codes(param_id)[0].toarray()
 s_codes = codes[:30000]
-codes_dist = compute_patterns_dist(codes)
-s_codes_dist = compute_patterns_dist(s_codes)
+codes_dist, _ = distributions(codes)
+s_codes_dist, _ = distributions(s_codes)
 
 l_dists = [s_mnist_dist, mnist_dist, s_codes_dist, codes_dist]
-l_names = ["MNIST 30K", "MNIST 60K", "WW 30K", "WW60K"]
+l_names = ["MNIST n=784 M =30k", "MNIST n=784 M =60k", "WW n=8820 M=30k", "WW n=8820 M=60k"]
 
 plot_dists_kldivs(l_dists, l_names, "mnist")
+print("Done with mnist/codes")
 """ ------------------------------------------- """
 
 l_n = [100, 500]
@@ -91,12 +93,13 @@ for n in l_n:
     for M in l_M:
         q = np.full((n), 1 / n)
         data = generate_bin_data_from_dist(q, M, n)
-        p = compute_patterns_dist(data)
+        p, _ = distributions(data)
         l_dists.append(p)
         l_names.append(f"Uniform: n={n}, M={M}")
 
 
 plot_dists_kldivs(l_dists, l_names, "unif")
+print("Done with unif")
 
 """ ------------------------------------------- """
 l_dists = []
@@ -108,10 +111,11 @@ for n in l_n:
         q = np.histogram(q, bins=n, density=True)[0]
 
         data = generate_bin_data_from_dist(q, M, n)
-        p = compute_patterns_dist(data)
+        p, _ = distributions(data)
 
         l_dists.append(p)
         l_names.append(f"Normal: n={n}, M={M}")
 
 
 plot_dists_kldivs(l_dists, l_names, "normal")
+print("Done with normal")

@@ -1,6 +1,7 @@
 from math import log2
 import numpy as np
 from scipy.stats import entropy
+from .plot import plot_dists
 
 
 def distributions(dataset):
@@ -117,11 +118,19 @@ if __name__ == "__main__":
     q3 = np.array([0.2, 0.2, 0.2, 0.4])
     q4 = np.array([0.24, 0.26, 0.24, 0.26])
 
-    measure_data_distribution(q1, u, verbose=True)
-    measure_data_distribution(q2, u, verbose=True)
-    measure_data_distribution(q3, u, verbose=True)
-    measure_data_distribution(q4, u, verbose=True)
-    measure_data_distribution(u, u, verbose=True)
+    l_dists = [q1, q2, q3, q4, u]
+
+    d1, kl1, e1 = measure_data_distribution(q1, u, verbose=True)
+    d2, kl2, e2 = measure_data_distribution(q2, u, verbose=True)
+    d3, kl3, e3 = measure_data_distribution(q3, u, verbose=True)
+    d4, kl4, e4 = measure_data_distribution(q4, u, verbose=True)
+    d5, kl5, e5 = measure_data_distribution(u, u, verbose=True)
+
+    l_d = [d1, d2, d3, d4, d5]
+    l_kl = [kl1, kl2, kl3, kl4, kl5]
+    l_e = [e1, e2, e3, e4, e5]
+
+    plot_dists(l_dists, l_d, l_kl, l_e)
 
     dset = np.array([[1, 0], [0, 1], [0, 1], [0, 1], [0, 1]])
     print(f"dset shape= {dset.shape}")

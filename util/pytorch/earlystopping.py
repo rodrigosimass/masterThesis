@@ -6,7 +6,13 @@ class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
 
     def __init__(
-        self, patience=7, verbose=False, delta=0, path="pickles/checkpoint.pt", trace_func=print
+        self,
+        patience=7,
+        verbose=False,
+        delta=0,
+        path="pickles/",
+        name="model",
+        trace_func=print,
     ):
         """
         Args:
@@ -28,7 +34,7 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        self.path = path
+        self.path = path + name + ".pt"
         self.trace_func = trace_func
 
     def __call__(self, val_loss, model):

@@ -1,11 +1,41 @@
 import numpy as np
+from random import randrange
 
 
-def get_1_per_class(imgs, lbls):
-    l_examples = []
+def idxs_first_per_class(lbls):
+    l_idxs = []
     for i in range(10):
-        l_examples.append(imgs[lbls == i][0])
-    return np.array(l_examples)
+        class_idxs = np.array(np.where(lbls == i)).flatten()
+        l_idxs.append(class_idxs[0])
+    return l_idxs
+
+
+def idxs_last_per_class(lbls):
+    l_idxs = []
+    for i in range(10):
+        class_idxs = np.array(np.where(lbls == i)).flatten()
+        l_idxs.append(class_idxs[-1])
+    return l_idxs
+
+
+def idxs_1_random_per_class(lbls):
+    l_idxs = []
+    for i in range(10):
+        class_idxs = np.array(np.where(lbls == i)).flatten()
+        rand_idx = randrange(0, len(class_idxs))
+        class_idx = class_idxs[rand_idx]
+        l_idxs.append(class_idx)
+    return l_idxs
+
+
+def idxs_class_evolution(lbls, lbl, n):
+    l_idxs = []
+    class_idxs = np.array(np.where(lbls == lbl)).flatten()
+    step = int(class_idxs.shape[0] / n)
+    for i in range(n):
+        idx = class_idxs[i * step]
+        l_idxs.append(idx)
+    return l_idxs
 
 
 def load_idxfile(filename):

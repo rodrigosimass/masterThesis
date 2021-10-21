@@ -8,28 +8,10 @@ import matplotlib.pyplot as plt
 import wandb
 import torchvision as torchv
 import sys
-from util.pytorchtools import EarlyStopping
+from util.pytorch.earlystopping import *
+from util.pytorch.paramReader import *
 from util.whatwhere.encoder import get_codes_examples
-
-
-class MLP2H(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim):
-        super().__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.hidden_dim = hidden_dim
-        current_dim = input_dim
-        self.layers = nn.ModuleList()
-        for hdim in hidden_dim:
-            self.layers.append(nn.Linear(current_dim, hdim))
-            current_dim = hdim
-        self.layers.append(nn.Linear(current_dim, output_dim))
-
-    def forward(self, x):
-        for layer in self.layers[:-1]:
-            x = torch.relu(layer(x))
-        y = torch.relu(self.layers[-1](x))
-        return y
+from models.MLP import *
 
 
 if __name__ == "__main__":
@@ -43,19 +25,23 @@ if __name__ == "__main__":
     param_id = "k20_Fs2_ep5_b0.8_Q21_Tw0.95"
 
     # MLP
-    dim_hid = [2000]
+    dim_hid = []
     dim_in = 20 * 21 * 21
     dim_out = 28 * 28
-    max_epochs = 100
+    max_epochs = 200
     lr = 0.01
-    batch_size = 100
-    patience = 10
-    delta = 0.001
+    batch_size = 1000
+    patience = 20
+    delta = 0.0001
     shuffle = False
 
+    loss = "MSE"
+
     # MNIST
-    trn_n = 600
-    val_n = 100  # if (trn_n=60k;val_n=10k), then we will train with 50k and use 10k for valid
+    trn_n = 10000
+    val_n = 2000  # if (trn_n=60k;val_n=10k), then we will train with 50k and use 10k for valid
+
+    model_name = "MLP_" + loss + "_" + str(dim_hid) + "_n_" + str(trn_n)
 
     imgs, _, _, _ = read_mnist()
     codes, _ = load_codes(param_id)
@@ -75,9 +61,9 @@ if __name__ == "__main__":
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MLP2H(input_dim=dim_in, output_dim=dim_out, hidden_dim=dim_hid).to(device)
+    model = MLP(input_dim=dim_in, output_dim=dim_out, hidden_dim=dim_hid).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    loss_function = nn.MSELoss()
+    loss_function = loss_function(loss)
 
     if USE_WANDB:
         wandb.init(
@@ -92,11 +78,14 @@ if __name__ == "__main__":
                 "shuffle_data": shuffle,
                 "patience": patience,
                 "trn_n": trn_n,
+                "loss": loss,
             },
         )
 
     if patience > 0:
-        early_stopping = EarlyStopping(patience=patience, verbose=True, delta=delta)
+        early_stopping = EarlyStopping(
+            patience=patience, verbose=True, delta=delta, name=model_name
+        )
     for epoch in range(0, max_epochs):
         print(f"Starting epoch {epoch+1}")
 
@@ -123,7 +112,7 @@ if __name__ == "__main__":
             val_loss += loss.item()
         val_loss = val_loss / len(val_loader)
 
-        print(f"MSE Loss (train) = {trn_loss} ; MSE Loss (validation) = {val_loss}")
+        print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
 
         # Early Stopping
         if patience > 0:
@@ -152,8 +141,8 @@ if __name__ == "__main__":
 
             wandb.log(
                 {
-                    "MSE_train": trn_loss / len(trn_loader),
-                    "MSE_valid": val_loss / len(val_loader),
+                    "loss_trn": trn_loss / len(trn_loader),
+                    "loss_val": val_loss / len(val_loader),
                     "n_epochs": epoch,
                     "Output": ex_out,
                     "Target": ex_target,

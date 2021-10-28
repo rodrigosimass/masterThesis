@@ -132,7 +132,7 @@ dirty = (model(torch.Tensor(ret))).detach().numpy().reshape((trn_n, 28, 28))
 
 plot_error_evolution(clean, dirty)
 
-""" # First rom each class
+""" # First from each class
 idxs = idxs_first_per_class(lbls)
 plot_examples(imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], "first10")
 

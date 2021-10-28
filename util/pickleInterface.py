@@ -38,8 +38,19 @@ def load_codes(run_name):
     return (trn_ww, tst_ww)
 
 
+def get_features_run_name(k, Fs, n_epochs, b):
+    return "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
+
+def load_features(run_name):
+    try:
+        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__features.p>> not found...")
+        exit(1)
+    return features
+
 def compute_features(trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=False):
-    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
+    run_name = get_features_run_name(k, Fs, n_epochs, b)
     try:
         features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
         if verbose:
@@ -56,6 +67,23 @@ def compute_features(trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=Fals
     return features
 
 
+def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what):
+    return (
+        "k"
+        + str(k)
+        + "_Fs"
+        + str(Fs)
+        + "_ep"
+        + str(n_epochs)
+        + "_b"
+        + str(b)
+        + "_Q"
+        + str(Q)
+        + "_Tw"
+        + str(T_what)
+    )
+
+
 def compute_codes(
     trn_imgs,
     tst_imgs,
@@ -70,8 +98,7 @@ def compute_codes(
     verbose=False,
     test=False,
 ):
-    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-    run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
+    run_name = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
 
     try:
         codes = pickle.load(open(f"pickles/{run_name}__ww_trn.p", "rb"))

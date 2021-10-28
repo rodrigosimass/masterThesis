@@ -13,6 +13,7 @@ class EarlyStopping:
         path="pickles/",
         name="model",
         trace_func=print,
+        save_model = False
     ):
         """
         Args:
@@ -36,6 +37,7 @@ class EarlyStopping:
         self.delta = delta
         self.path = path + name + ".pt"
         self.trace_func = trace_func
+        self.save_model = save_model
 
     def __call__(self, val_loss, model):
 
@@ -43,24 +45,25 @@ class EarlyStopping:
 
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, self.save_model)
         elif score < self.best_score + self.delta:
             self.counter += 1
             self.trace_func(
-                f"EarlyStopping counter: {self.counter} out of {self.patience}"
+                f"""Validation loss increased ({val_loss:.6f}) EarlyStopping counter: {self.counter}/{self.patience}"""
             )
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, self.save_model)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model):
+    def save_checkpoint(self, val_loss, model, save):
         """Saves model when validation loss decrease."""
         if self.verbose:
             self.trace_func(
                 f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
             )
-        torch.save(model.state_dict(), self.path)
+        if save:
+            torch.save(model.state_dict(), self.path)
         self.val_loss_min = val_loss

@@ -1,3 +1,4 @@
 **/pickles
 **/wandb
 *.pyc
+.vscode/settings.json

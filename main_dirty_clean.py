@@ -2,11 +2,12 @@ import torch
 from util.pickleInterface import load_codes, load_ret
 from util.mnist.tools import *
 from models.MLP import *
+from models.deCNN import *
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_error_evolution(clean, dirty):
+def plot_error_evolution(clean, dirty,name):
 
     diff = dirty - clean
 
@@ -47,7 +48,7 @@ def plot_error_evolution(clean, dirty):
 
     fig.set_size_inches(10, 5)
     plt.tight_layout()
-    plt.savefig(f"img/decoder/error_evolution_shareY.png")
+    plt.savefig(f"img/decoder/{name}error_evolution_shareY.png")
 
 
 def plot_examples(imgs, lbls, clean, dirty, name="dirtyClean"):
@@ -93,24 +94,77 @@ def plot_examples(imgs, lbls, clean, dirty, name="dirtyClean"):
 param_id = "k20_Fs2_ep5_b0.8_Q21_Tw0.95"
 
 # MLP
-dim_hid = []
+dim_hid = [200,200]
 dim_in = 20 * 21 * 21
 dim_out = 28 * 28
-max_epochs = 200
-lr = 0.01
-batch_size = 1000
-patience = 20
-delta = 0.0001
-shuffle = False
 
-loss = "MSE"
+shuffle = True
+lr = 1e-3
 
-trn_n = 10000
-val_n = (
-    2000  # if (trn_n=60k;val_n=10k), then we will train with 50k and use 10k for valid
-)
+max_epochs = 300
+patience = 5
+delta = 1e-4
 
-model_name = "MLP_" + loss + "_" + str(dim_hid) + "_n_" + str(trn_n)
+
+# Dataset sizes
+batch_size = 4
+size = 1000
+
+trn_n = 6 * size
+val_n = 2 * size  
+tst_n = 1 * size
+
+tst_model = True
+save_model = True
+
+
+
+""" #CNN
+
+# CODES
+k = 20
+Fs = 2
+n_epochs = 5
+b = 0.8
+Q = 21
+T_what = 0.95
+#code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
+
+# UPSCALE LAYER
+l1_in_dim = k * Q * Q  # Codes after retinotopic step
+l1_out_dim = k * 28 * 28  # codes before retinotopic step
+
+# early stopping
+patience = 10
+delta = 1e-4
+
+# train
+max_epochs = 100
+lr = 3e-3
+
+# Dataset sizes
+batch_size = 8
+size = 2000
+
+trn_n = 6 * size
+val_n = 2 * size  
+tst_n = 1 * size
+
+tst_model = True
+save_model = True
+
+# CNN params are computes from the WW encoder params
+init_kernels = False
+convT_in_ch = k
+convT_out_ch = 1
+convT_k_size = 2 * Fs + 1
+convT_pad = (Fs, Fs)  # for same padding
+ """
+
+
+model_name = "MLP_decoder[200, 200]_n_30000"
+#model_name = "CNN_init_False_n_12000"
+#model_name = "CNN_init_True_n_12000"
 model_PATH = f"pickles/{model_name}.pt"
 
 imgs, lbls, _, _ = read_mnist()
@@ -119,29 +173,45 @@ ret = load_ret(param_id)
 
 imgs = imgs[:trn_n].reshape((trn_n, 28, 28))
 lbls = lbls[:trn_n]
+""" codes = codes[:trn_n].toarray().reshape((-1, k, Q, Q))
+ret = ret[:trn_n].toarray().reshape((-1, k, Q, Q)) """
 codes = codes[:trn_n].toarray()
 ret = ret[:trn_n].toarray()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = MLP(input_dim=dim_in, output_dim=dim_out, hidden_dim=dim_hid).to(device)
+device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+print(f'Selected device: {device}')
+model = MLP(input_dim=dim_in, output_dim=dim_out, hidden_dim_list=dim_hid).to(device)
+""" model = deCNN_MLP(
+            l1_in_dim,
+            l1_out_dim,
+            convT_in_ch,
+            convT_out_ch,
+            convT_k_size,
+            convT_pad).to(device) """
 model.load_state_dict(torch.load(model_PATH))
 
-clean = (model(torch.Tensor(codes))).detach().numpy().reshape((trn_n, 28, 28))
+model.eval()
+codes = torch.Tensor(codes)
+#codes = codes.to(device)
+ret = torch.Tensor(ret)
+#ret = ret.to(device)
+                
+clean = (model(codes)).detach().numpy().reshape((trn_n, 28, 28))
 
-dirty = (model(torch.Tensor(ret))).detach().numpy().reshape((trn_n, 28, 28))
+dirty = (model(ret)).detach().numpy().reshape((trn_n, 28, 28))
 
-plot_error_evolution(clean, dirty)
+plot_error_evolution(clean, dirty, "MLP")
 
-""" # First from each class
+# First from each class
 idxs = idxs_first_per_class(lbls)
-plot_examples(imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], "first10")
+plot_examples(imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], "MLPfirst10")
 
 # last from each class
 idxs = idxs_last_per_class(lbls)
-plot_examples(imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], "last10")
+plot_examples(imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], "MLPlast10")
 
 for i in range(10):
     idxs = idxs_class_evolution(lbls, i, 10)
     plot_examples(
-        imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], f"class_{i}_evolution"
-    ) """
+        imgs[idxs], lbls[idxs], clean[idxs], dirty[idxs], f"MLPclass_{i}_evolution"
+    )

@@ -31,23 +31,22 @@ if __name__ == "__main__":
 
     # early stopping
     patience = 10
-    delta = 0.001
+    delta = 1e-4
 
     # train
-    shuffle = True
-    max_epochs = 300
-    lr = 0.001
+    max_epochs = 100
+    lr = 3e-3
 
     # Dataset sizes
-    batch_size = 32
-    size = 4000 
+    batch_size = 8
+    size = 2000
     
     trn_n = 6 * size
     val_n = 2 * size  
     tst_n = 1 * size
 
     tst_model = True
-    save_model = False
+    save_model = True
 
     # CNN params are computes from the WW encoder params
     init_kernels = False
@@ -56,18 +55,16 @@ if __name__ == "__main__":
     convT_k_size = 2 * Fs + 1
     convT_pad = (Fs, Fs)  # for same padding
 
-    model_name = "CNN" + "_" + "n" + "_" + str(trn_n)
+    model_name = "CNN" +  "_init_" + str(init_kernels) +  "_n_"  + str(trn_n)
     
-    """ ---------- LOAD DATA ---------- """
-
     trn_imgs, _, tst_imgs, tst_lbls = read_mnist()
     trn_imgs = trn_imgs[:trn_n].reshape((trn_n, 28 * 28))
     tst_imgs = tst_imgs[:tst_n].reshape((tst_n, 28 * 28))
     tst_lbls = tst_lbls[:tst_n]
     
     trn_codes, tst_codes = load_codes(code_id)
-    trn_codes = trn_codes[:trn_n].toarray()
-    tst_codes = tst_codes[:tst_n].toarray()
+    trn_codes = trn_codes[:trn_n].toarray().reshape((-1, k, Q, Q))
+    tst_codes = tst_codes[:tst_n].toarray().reshape((-1, k, Q, Q))
 
     # create a tensor of the kernels that generated the codes
     features = load_features(get_features_run_name(k,Fs, n_epochs, b))
@@ -86,9 +83,9 @@ if __name__ == "__main__":
 
     trn_dataset, val_dataset = random_split(trn_dataset, [trn_n - val_n, val_n])
 
-    trn_loader = DataLoader(trn_dataset, batch_size=batch_size, shuffle=shuffle)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
-    tst_loader = DataLoader(tst_dataset, batch_size=batch_size, shuffle=shuffle)
+    trn_loader = DataLoader(trn_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    tst_loader = DataLoader(tst_dataset, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'Selected device: {device}')
@@ -105,11 +102,9 @@ if __name__ == "__main__":
 
     loss_function = nn.MSELoss()
 
-    print_model_info(model, optimizer, loss_function, verbose=2)
-
     #TODO: maybe init with Kmeans kernels
     if init_kernels:
-        model.state_dict()["convT.weight"][:] = features
+        model.state_dict()["convT1.weight"][:] = features
 
 
     if USE_WANDB:
@@ -131,13 +126,14 @@ if __name__ == "__main__":
                 "ann_lr": lr,
                 "ann_max_epochs": max_epochs,
                 "ann_batch_size": batch_size,
-                "ann_shuffle_data": shuffle,
                 "ann_patience": patience,
                 "ann_trn_n": trn_n,
                 "ann_val_n": val_n,
                 "ann_loss": str(loss_function),
             },
         )
+
+    print_model_info(model, optimizer, loss_function, verbose=2)
 
     if patience > 0:
         early_stopping = EarlyStopping(
@@ -149,7 +145,9 @@ if __name__ == "__main__":
         # Training
         trn_loss = 0.0
         for inputs, targets in trn_loader:
-        
+
+            model.train()
+            
             inputs = inputs.to(device)
             targets = targets.to(device)
 
@@ -162,11 +160,12 @@ if __name__ == "__main__":
 
             loss.backward()  # Perform backward pass
             optimizer.step()  # Perform optimization
-        trn_loss = trn_loss / len(trn_loader)
+        trn_loss = trn_loss / len(trn_loader) #TODO: chamar isto avg_trn_loss
 
         # Validation
         val_loss = 0.0
         with torch.no_grad():
+            model.eval()
             for inputs, targets in val_loader:
                 inputs = inputs.to(device)
                 targets = targets.to(device)
@@ -177,7 +176,7 @@ if __name__ == "__main__":
 
         val_loss = val_loss / len(val_loader)
 
-        print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
+        #print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
 
         # Early Stopping
         if patience > 0:
@@ -210,10 +209,15 @@ if __name__ == "__main__":
                 ex_out = wandb.Image(grid)
                 log_dict["Output"] = ex_out
 
-                kernels = model.convT.weight
+                kernels = model.convT1.weight
                 grid = torchv.utils.make_grid(kernels, normalize=True, nrow=10, pad_value=1)
                 kernels = wandb.Image(grid)
-                log_dict["CNN_kernels"] = kernels
+                log_dict["CNN_kernels1"] = kernels
+
+                #kernels = model.convT2.weight
+                #grid = torchv.utils.make_grid(kernels, normalize=True, nrow=10, pad_value=1)
+                #kernels = wandb.Image(grid)
+                #log_dict["CNN_kernels1"] = kernels
 
             
             wandb.log(log_dict, step=epoch)

@@ -22,6 +22,12 @@ class MLP(nn.Module):
         return y
 
 
+
+
+
+
+
+
 class pseudoWN(nn.Module):
     def __init__(self, pattern_size, W, b):
         super().__init__()

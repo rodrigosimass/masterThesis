@@ -13,7 +13,7 @@ from models.MLP import *
 if __name__ == "__main__":
     """ ------------------------------------- """
     if len(sys.argv) != 2:
-        print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
+        print("ERROR! \nusage: python MLP.py <<0/1>> for wandb on or off")
         exit(1)
     USE_WANDB = bool(int(sys.argv[1]))
     """ ------------------------------------- """
@@ -28,32 +28,29 @@ if __name__ == "__main__":
     code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
 
     # MLP
-    dim_hid = [200,200]
-    dim_in = 20 * 21 * 21
-    dim_out = 28 * 28
+    dim_hid = [2000,4000]
+    dim_in = 28 * 28
+    dim_out = 20 * 21 * 21
     
-    shuffle = True
     lr = 1e-3
     
     max_epochs = 300
-    patience = 5
+    patience = 10
     delta = 1e-4
 
 
     # Dataset sizes
-    batch_size = 4
-    size = 5000
+    batch_size = 32
+    size = 2000 
     
     trn_n = 6 * size
     val_n = 2 * size  
     tst_n = 1 * size
 
     tst_model = True
-    save_model = True
+    save_model = False
 
-    model_name = "MLP_decoder" + str(dim_hid) + "_n_" + str(trn_n)
-
-    ret_percent = 0
+    model_name = "MLP_encoder" + str(dim_hid) + "_n_" + str(trn_n)
 
     trn_imgs, _, tst_imgs, tst_lbls = read_mnist()
     trn_imgs = trn_imgs[:trn_n].reshape((trn_n, 28 * 28))
@@ -71,14 +68,14 @@ if __name__ == "__main__":
     tst_target = tst_target.reshape((-1, 28, 28)) 
     tst_target = torch.unsqueeze(tst_target, dim=1) # Add the channel dimention
 
-    trn_dataset = TensorDataset(torch.Tensor(trn_codes), torch.Tensor(trn_imgs))
-    tst_dataset = TensorDataset(torch.Tensor(tst_codes), torch.Tensor(tst_imgs))
+    trn_dataset = TensorDataset(torch.Tensor(trn_imgs), torch.Tensor(trn_codes))
+    tst_dataset = TensorDataset(torch.Tensor(tst_imgs), torch.Tensor(tst_codes))
 
     trn_dataset, val_dataset = random_split(trn_dataset, [trn_n - val_n, val_n])
 
-    trn_loader = DataLoader(trn_dataset, batch_size=batch_size, shuffle=shuffle)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
-    tst_loader = DataLoader(tst_dataset, batch_size=batch_size, shuffle=shuffle)
+    trn_loader = DataLoader(trn_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    tst_loader = DataLoader(tst_dataset, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'Selected device: {device}')
@@ -88,11 +85,10 @@ if __name__ == "__main__":
     loss_function = nn.MSELoss()
 
     print_model_info(model, optimizer, loss_function, verbose=2)
-    
 
     if USE_WANDB:
         wandb.init(
-            project="decoder_mlp",
+            project="encoder_mlp",
             entity="rodrigosimass",
             config={
                 "ww_k": k,
@@ -106,7 +102,6 @@ if __name__ == "__main__":
                 "ann_lr": lr,
                 "ann_max_epochs": max_epochs,
                 "ann_batch_size": batch_size,
-                "ann_shuffle_data": shuffle,
                 "ann_patience": patience,
                 "ann_delta": delta,
                 "ann_loss": str(loss_function),
@@ -124,7 +119,9 @@ if __name__ == "__main__":
         # Training
         trn_loss = 0.0
         for inputs, targets in trn_loader:
-        
+            
+            model.train()
+
             inputs = inputs.to(device)
             targets = targets.to(device)
 
@@ -142,6 +139,7 @@ if __name__ == "__main__":
         # Validation
         val_loss = 0.0
         with torch.no_grad():
+            model.eval()
             for inputs, targets in val_loader:
                 inputs = inputs.to(device)
                 targets = targets.to(device)
@@ -158,32 +156,15 @@ if __name__ == "__main__":
                 break 
 
         # Log stats
-        if USE_WANDB:
-            log_dict = {"trn_loss":trn_loss, "val_loss": val_loss}
-            
-            if epoch == 0:
-                # Example grid or target (desired outputs)
-                grid = torchv.utils.make_grid(tst_target, normalize=True, nrow=10, pad_value=1, range=(0,1))
-                ex_target = wandb.Image(grid)
-                log_dict["Target"] = ex_target
-
-            if early_stopping.counter == 0 or epoch == 0: #Improved -> log reconstructions
-                with torch.no_grad():
-                    tst_in = tst_in.to(device)
-                    tst_out = model(tst_in.float())
-                tst_out = tst_out.reshape((-1, 28, 28))
-                tst_out = torch.unsqueeze(tst_out, dim=1) # Add empty channel dimention
-                grid = torchv.utils.make_grid(tst_out, normalize=True, nrow=10, pad_value=1, range=(0,1))
-                ex_out = wandb.Image(grid)
-                log_dict["Output"] = ex_out
-            
-            wandb.log(log_dict, step=epoch)
+        if USE_WANDB:            
+            wandb.log({"trn_loss":trn_loss, "val_loss": val_loss}, step=epoch)
 
     print("Training done...")
     
     if tst_model:
         tst_loss = 0.0
         with torch.no_grad():
+            model.eval()
             for inputs, targets in tst_loader:
                 inputs = inputs.to(device)
                 targets = targets.to(device)

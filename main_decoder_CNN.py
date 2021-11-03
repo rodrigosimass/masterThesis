@@ -213,12 +213,6 @@ if __name__ == "__main__":
                 grid = torchv.utils.make_grid(kernels, normalize=True, nrow=10, pad_value=1)
                 kernels = wandb.Image(grid)
                 log_dict["CNN_kernels1"] = kernels
-
-                #kernels = model.convT2.weight
-                #grid = torchv.utils.make_grid(kernels, normalize=True, nrow=10, pad_value=1)
-                #kernels = wandb.Image(grid)
-                #log_dict["CNN_kernels1"] = kernels
-
             
             wandb.log(log_dict, step=epoch)
 

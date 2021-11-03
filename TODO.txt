@@ -1,31 +1,31 @@
-0: getting familiar with the code
-    [] experiment with winner takes all 
-1: Willshaw and whatwhere codes
-    [] guardar versão binaria do MNIST na willshaw e medir retrive error
+Questions:
+- Os sparse codes têm sempre um numero de active units multiplo de 3, Porquê?
 
 Housekeeping:
 [] guardar matrizes de bools
 [x] mudar nome dos ficheiros
-[x] usar o weights and biases
+[x] Aprender a fazer SSH para o pc do Tagus
+[x] Correr o código com o CUDA no ubuntu.
+[x] use wandb
 [x] retirar plots das funcoes compute or load, meter essa logica no main
+[] usar ConfigArgParse
+[] usar tqdm
+[] migrar os ficheiros para linux subsystem por causa do WSL2
 
+Experiments:
+    Code generation:
+        [] experiment with/without winner takes all
+        [] Ver como é que o Fs influencia a distancia no step de convolution da geração de codigos
+        [] baseline: guardar versão binaria do MNIST com threshold na willshaw e medir retrive error (como no paper do Luis).
+        [x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
+        [x] Fazer a kl div como deve de ser (normalizada para 1)
+        [x] Tentar Shannon Entropy para medir distribuiçao dos codigos
+    Willshaw:
 
-Question:
-- Os sparse codes têm sempre um numero de active units multiplo de 3, Porquê?
-
-
-[x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
-
-Housekeeping day after meeting:
-[] Aprender a fazer SSH para o pc do Tagus
-[] Correr o código com o CUDA no ubuntu.
-[] Limpar o código e arrumar as experiencias do wandb
-
-Depois da meeting de Setembro
-[] Fazer a kl div como deve de ser (normalizada para 1)
-[] Tentar o MLP com zero Hidden layers (perceptron)
-[] Tentar Shannon Entropy
-[] Ver como é que o Fs influencia a distancia no paço de convolution da geração de codigos
-
-[] Treinar uma deconvolution CNN com as mesmos parametros que geraram os codigos, comparar com aqueles que são obtidos com o KNN do Luis.
-[] Comparar a accuracy do melhor CCN decoder, com um que seja inicializado com os kernels do Luis.
+    Decoder:
+        [x] Tentar o MLP com zero Hidden layers (perceptron)
+        [x] Treinar uma deconvolution CNN com as mesmos parametros que geraram os codigos, comparar com aqueles que são obtidos com o KNN do Luis.
+        [x] Comparar a accuracy do melhor CCN decoder, com um que seja inicializado com os kernels do Luis.
+        [] Fazer plot do MSE de reconstrucao por class (paraver se o modelo esta a dar overfit a uma class especifica)
+    Encoder:
+    Autoencoder:

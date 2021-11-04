@@ -8,8 +8,10 @@ from .plot import *
 import sys
 import torchvision as torchv
 import torch
+from tqdm import trange
+from tqdm import tqdm
 
-# same padding
+
 def to_windows(img, window_shape, step_shape, dims=None):
     pad = []
     if dims is None:
@@ -176,20 +178,9 @@ def grid_encoding(x, Q, k):
     return h
 
 
-#### Dictionary learning
-"""
-D conjunto de treino
-K num features
-patch_size: tamnaho da window 
-background :  minimum windows norm
- """
-
-
 def learn_features(
     trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None, verbose=False
 ):
-    # background discards values of patterns that are small in norm
-    print(f"Learning a new dictionary...")
 
     patch_size = (
         1 + 2 * Fs,
@@ -199,10 +190,10 @@ def learn_features(
     if kmeans is None:
         kmeans = MiniBatchKMeans(n_clusters=k, random_state=rng, verbose=True)
     buffer = []
-    t0 = time.time()
     index = 0
-    for _ in range(n_epochs):
-        for img in trn_imgs:
+
+    for _ in trange(n_epochs, desc="Learning dictionary", unit="epoch"):
+        for img in tqdm(trn_imgs, unit="datasamples", leave=False):
             data = to_windows(
                 img, patch_size, tuple(np.ones(len(patch_size)).astype(int))
             )
@@ -221,44 +212,13 @@ def learn_features(
                 # data /= np.std(data, axis=0)
                 kmeans.partial_fit(data)
                 buffer = []
-            if index % 10000 == 0 and verbose:
-                print(
-                    "Partial fit of %4i out of %i"
-                    % (index / 1000, n_epochs * len(trn_imgs) / 1000)
-                )
-    dt = time.time() - t0
-    print("done in %.2fs." % dt)
+
     return kmeans.cluster_centers_.reshape((-1,) + patch_size), kmeans
 
 
-def compute_features(trn_imgs, k, Fs, rng, n_epochs, b=0.8, plot=False, verbose=False):
-    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-    try:
-        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
-        if verbose:
-            print(f"loaded features from pickles/{run_name}__features.p")
-    except (OSError, IOError) as _:
-        features, _ = learn_features(
-            trn_imgs, k, Fs, rng, n_epochs, background=b, verbose=verbose
-        )
-        pickle.dump(
-            features,
-            open(f"pickles/{run_name}__features.p", "wb"),
-        )
-
-    """ if plot:
-        plot_features2(features, features_shape, run_name) """
-
-    return features
-
-
 def learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta):
-    if verbose:
-        print("Generation codes...")
     codes = np.zeros((trn_imgs.shape[0], k * Q ** 2))
-    for i in range(trn_imgs.shape[0]):  # for all images
-        if i % 1000 == 0 and verbose:
-            print(i / 1000, " out of ", trn_imgs.shape[0] / 1000)
+    for i in trange(trn_imgs.shape[0], desc="Generating codes", unit="datasample"):
         img = trn_imgs[i]
         a = mu_ret(img, features, T_what, wta=wta)
         s = enum_set(a)
@@ -272,13 +232,23 @@ def learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta):
     return csr_matrix(codes)
 
 
-def get_codes_examples(codes, k, Q, num_examples=10):
-    examples = np.array(codes[:num_examples])
-    examples = examples.reshape(num_examples, k, Q, Q)
-    examples = np.sum(examples, axis=1)
-    examples.reshape(num_examples, Q, Q)
+def measure_sparsity(codes, verbose=False):
+    AS = codes.nnz / (codes.shape[0] * codes.shape[1])
+    densest = np.max(csr_matrix.sum(codes, axis=1)) / codes.shape[1]
 
-    tensor = torch.from_numpy(examples)
+    if verbose:
+        print(f"Coded training set:\navg sparsity = {AS}\ndensest (%B) = {densest}")
+
+    return (AS, densest)
+
+
+def code_grid(codes, K, Q, num_examples=10):
+    codes = codes[:num_examples]
+    codes = codes.reshape((num_examples, Q, Q, K))
+    codes = np.sum(codes, axis=3)
+    codes.reshape(num_examples, Q, Q)
+
+    tensor = torch.from_numpy(codes)
     tensor = torch.unsqueeze(tensor, dim=1)
     grid = torchv.utils.make_grid(tensor, normalize=True, nrow=10, pad_value=1)
     return grid

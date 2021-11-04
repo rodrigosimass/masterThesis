@@ -76,7 +76,12 @@ codes_dist, _ = distributions(codes)
 s_codes_dist, _ = distributions(s_codes)
 
 l_dists = [s_mnist_dist, mnist_dist, s_codes_dist, codes_dist]
-l_names = ["MNIST n=784 M =30k", "MNIST n=784 M =60k", "WW n=8820 M=30k", "WW n=8820 M=60k"]
+l_names = [
+    "MNIST n=784 M =30k",
+    "MNIST n=784 M =60k",
+    "WW n=8820 M=30k",
+    "WW n=8820 M=60k",
+]
 
 plot_dists_kldivs(l_dists, l_names, "mnist")
 print("Done with mnist/codes")

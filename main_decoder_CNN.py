@@ -3,7 +3,12 @@ import sys
 import torch
 import torchvision as torchv
 from torch.utils.data import TensorDataset, DataLoader, random_split
-from util.pickleInterface import load_codes, get_codes_run_name, get_features_run_name, load_features
+from util.pickleInterface import (
+    load_codes,
+    get_codes_run_name,
+    get_features_run_name,
+    load_features,
+)
 from util.mnist.tools import *
 from util.pytorch.earlystopping import *
 from util.pytorch.print_log import print_model_info
@@ -14,7 +19,7 @@ if __name__ == "__main__":
         print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
         exit(1)
     USE_WANDB = bool(int(sys.argv[1]))
-    
+
     """ ---------- PARAMS ---------- """
     # CODES
     k = 20
@@ -40,9 +45,9 @@ if __name__ == "__main__":
     # Dataset sizes
     batch_size = 8
     size = 2000
-    
+
     trn_n = 6 * size
-    val_n = 2 * size  
+    val_n = 2 * size
     tst_n = 1 * size
 
     tst_model = True
@@ -55,57 +60,54 @@ if __name__ == "__main__":
     convT_k_size = 2 * Fs + 1
     convT_pad = (Fs, Fs)  # for same padding
 
-    model_name = "CNN" +  "_init_" + str(init_kernels) +  "_n_"  + str(trn_n)
-    
+    model_name = "CNN" + "_init_" + str(init_kernels) + "_n_" + str(trn_n)
+
     trn_imgs, _, tst_imgs, tst_lbls = read_mnist()
     trn_imgs = trn_imgs[:trn_n].reshape((trn_n, 28 * 28))
     tst_imgs = tst_imgs[:tst_n].reshape((tst_n, 28 * 28))
     tst_lbls = tst_lbls[:tst_n]
-    
+
     trn_codes, tst_codes = load_codes(code_id)
     trn_codes = trn_codes[:trn_n].toarray().reshape((-1, k, Q, Q))
     tst_codes = tst_codes[:tst_n].toarray().reshape((-1, k, Q, Q))
 
     # create a tensor of the kernels that generated the codes
-    features = load_features(get_features_run_name(k,Fs, n_epochs, b))
+    features = load_features(get_features_run_name(k, Fs, n_epochs, b))
     features = torch.from_numpy(features)
     features = torch.unsqueeze(features, dim=1)
 
-    # create a tensor from the test set for each class (to visualize reconstructions) 
+    # create a tensor from the test set for each class (to visualize reconstructions)
     idxs = idxs_1_random_per_class(tst_lbls)
     tst_in = torch.from_numpy(tst_codes[idxs])
     tst_target = torch.from_numpy(tst_imgs[idxs])
-    tst_target = tst_target.reshape((-1, 28, 28)) 
-    tst_target = torch.unsqueeze(tst_target, dim=1) # Add the channel dimention
+    tst_target = tst_target.reshape((-1, 28, 28))
+    tst_target = torch.unsqueeze(tst_target, dim=1)  # Add the channel dimention
 
     trn_dataset = TensorDataset(torch.Tensor(trn_codes), torch.Tensor(trn_imgs))
     tst_dataset = TensorDataset(torch.Tensor(tst_codes), torch.Tensor(tst_imgs))
 
     trn_dataset, val_dataset = random_split(trn_dataset, [trn_n - val_n, val_n])
 
-    trn_loader = DataLoader(trn_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    trn_loader = DataLoader(
+        trn_dataset, batch_size=batch_size, shuffle=True, drop_last=True
+    )
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     tst_loader = DataLoader(tst_dataset, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f'Selected device: {device}')
+    print(f"Selected device: {device}")
 
     model = deCNN_MLP(
-            l1_in_dim,
-            l1_out_dim,
-            convT_in_ch,
-            convT_out_ch,
-            convT_k_size,
-            convT_pad).to(device)
+        l1_in_dim, l1_out_dim, convT_in_ch, convT_out_ch, convT_k_size, convT_pad
+    ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     loss_function = nn.MSELoss()
 
-    #TODO: maybe init with Kmeans kernels
+    # TODO: maybe init with Kmeans kernels
     if init_kernels:
         model.state_dict()["convT1.weight"][:] = features
-
 
     if USE_WANDB:
         wandb.init(
@@ -137,7 +139,11 @@ if __name__ == "__main__":
 
     if patience > 0:
         early_stopping = EarlyStopping(
-            patience=patience, verbose=True, delta=delta, name=model_name, save_model=save_model
+            patience=patience,
+            verbose=True,
+            delta=delta,
+            name=model_name,
+            save_model=save_model,
         )
     for epoch in range(0, max_epochs):
         print(f"Starting epoch {epoch+1}")
@@ -147,7 +153,7 @@ if __name__ == "__main__":
         for inputs, targets in trn_loader:
 
             model.train()
-            
+
             inputs = inputs.to(device)
             targets = targets.to(device)
 
@@ -160,7 +166,7 @@ if __name__ == "__main__":
 
             loss.backward()  # Perform backward pass
             optimizer.step()  # Perform optimization
-        trn_loss = trn_loss / len(trn_loader) #TODO: chamar isto avg_trn_loss
+        trn_loss = trn_loss / len(trn_loader)  # TODO: chamar isto avg_trn_loss
 
         # Validation
         val_loss = 0.0
@@ -169,14 +175,14 @@ if __name__ == "__main__":
             for inputs, targets in val_loader:
                 inputs = inputs.to(device)
                 targets = targets.to(device)
-                
+
                 outputs = model(inputs)  # Forward Pass
                 loss = loss_function(outputs, targets)
                 val_loss += loss.item()
 
         val_loss = val_loss / len(val_loader)
 
-        #print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
+        # print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
 
         # Early Stopping
         if patience > 0:
@@ -188,32 +194,42 @@ if __name__ == "__main__":
         # Log stats
         if USE_WANDB:
 
-            log_dict = {"trn_loss":trn_loss, "val_loss": val_loss}
+            log_dict = {"trn_loss": trn_loss, "val_loss": val_loss}
 
-            if epoch == 0: # one-time logs
-                grid = torchv.utils.make_grid(tst_target, normalize=True, nrow=10, pad_value=1, range=(0,1))
+            if epoch == 0:  # one-time logs
+                grid = torchv.utils.make_grid(
+                    tst_target, normalize=True, nrow=10, pad_value=1, range=(0, 1)
+                )
                 ex_target = wandb.Image(grid)
                 log_dict["Target"] = ex_target
 
-                grid = torchv.utils.make_grid(features, normalize=True, nrow=10, pad_value=1)
+                grid = torchv.utils.make_grid(
+                    features, normalize=True, nrow=10, pad_value=1
+                )
                 km_kernels = wandb.Image(grid)
                 log_dict["Kmeans_kernels"] = km_kernels
 
-            if early_stopping.counter == 0 or epoch == 0: #Improved -> log reconstructions
+            if (
+                early_stopping.counter == 0 or epoch == 0
+            ):  # Improved -> log reconstructions
                 with torch.no_grad():
                     tst_in = tst_in.to(device)
                     tst_out = model(tst_in.float())
                 tst_out = tst_out.reshape((-1, 28, 28))
-                tst_out = torch.unsqueeze(tst_out, dim=1) # Add empty channel dimention
-                grid = torchv.utils.make_grid(tst_out, normalize=True, nrow=10, pad_value=1, range=(0,1))
+                tst_out = torch.unsqueeze(tst_out, dim=1)  # Add empty channel dimention
+                grid = torchv.utils.make_grid(
+                    tst_out, normalize=True, nrow=10, pad_value=1, range=(0, 1)
+                )
                 ex_out = wandb.Image(grid)
                 log_dict["Output"] = ex_out
 
                 kernels = model.convT1.weight
-                grid = torchv.utils.make_grid(kernels, normalize=True, nrow=10, pad_value=1)
+                grid = torchv.utils.make_grid(
+                    kernels, normalize=True, nrow=10, pad_value=1
+                )
                 kernels = wandb.Image(grid)
                 log_dict["CNN_kernels1"] = kernels
-            
+
             wandb.log(log_dict, step=epoch)
 
     print("Training done...")
@@ -229,10 +245,9 @@ if __name__ == "__main__":
                 tst_loss += loss.item()
         tst_loss = tst_loss / len(tst_loader)
         if USE_WANDB:
-            wandb.log({"tst_loss":tst_loss})
+            wandb.log({"tst_loss": tst_loss})
 
         print(f"Test set avg. MSE loss = {tst_loss}")
 
-    
     if USE_WANDB:
         wandb.finish()

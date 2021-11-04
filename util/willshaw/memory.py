@@ -1,9 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import pickle
 from scipy.sparse import csr_matrix, vstack
 from .plot import *
-from .classifier import *
+from tqdm import tqdm
+from tqdm import trange
 
 
 def train(codes_csr, num_stored, verbose=False):
@@ -37,7 +36,9 @@ def incremental_train(new_data, current_W=None):
     else:
         will = current_W.toarray()
 
-    for pattern in new_data:  # for each pattern to store in will
+    for pattern in tqdm(
+        new_data, desc="Updating willshaw", leave=False
+    ):  # for each pattern to store in will
         num_nz = len(pattern.indices)
         for i in range(num_nz):
             # nz has the indexes of x that are non-zero
@@ -48,9 +49,12 @@ def incremental_train(new_data, current_W=None):
                 will[idx_j, idx_i] = 1
 
     will = csr_matrix(will)
-    sparsity = will.nnz / (will.shape[0] * will.shape[1])
 
-    return (will, sparsity)
+    return will
+
+
+def willshaw_sparsity(will):
+    return will.nnz / (will.shape[0] * will.shape[1])
 
 
 def H(vec):
@@ -86,15 +90,14 @@ def incremental_retreive(new_cues, W, prev_ret):
     return ret, AS, densest
 
 
-def retreive(codes, num_stored, W):
-
-    codes = codes[:num_stored]
+def retreive(codes, W):
 
     ret = np.zeros(codes.shape)
-
     s = csr_matrix.dot(codes, W)
 
-    for i in range(codes.shape[0]):  # for all retreival cues
+    for i in trange(
+        codes.shape[0], desc="Computing Retrieval Set", unit="datasample", leave=False
+    ):
         aux = s[i].toarray()
         m = np.max(aux)
         if m != 0:
@@ -104,11 +107,7 @@ def retreive(codes, num_stored, W):
             # zero activations
             ret[i] = 0
 
-    ret = csr_matrix(ret)
-    AS = ret.nnz / (ret.shape[0] * ret.shape[1])
-    densest = np.max(csr_matrix.sum(ret, axis=1)) / ret.shape[1]
-
-    return ret, AS, densest
+    return csr_matrix(ret)
 
 
 def performance_perfect_ret(codes, ret, verbose=False):
@@ -152,9 +151,29 @@ def performance_loss_noise(codes, ret, verbose=False):
     return (loss / total, noise / total)
 
 
+def simple_1NN_classifier(ret, codes, trn_lbls, verbose=False):
+    sim = csr_matrix.dot(ret, codes.T)
+    nn = csr_matrix.argmax(sim, axis=1)
+
+    num_stored = ret.shape[0]
+
+    prediction = trn_lbls[nn]
+    solution = trn_lbls[:num_stored]
+    diff = prediction.flatten() - solution.flatten()
+
+    errors = np.count_nonzero(diff)
+    error_rate = errors / num_stored
+
+    if verbose:
+        print(
+            f"1NN accuracy = {diff.shape[0] - errors}/{diff.shape[0]} ; Error rate: {error_rate}"
+        )
+    return error_rate
+
+
 def performance(codes, ret, trn_lbls, verbose=False):
     err_avg = performance_avg_error(codes, ret, verbose)
     err_loss, err_noise = performance_loss_noise(codes, ret, verbose)
     err_perf = performance_perfect_ret(codes, ret, verbose)
-    err_1nn = simple_1NN_classifier(ret, codes, trn_lbls, verbose=True)
+    err_1nn = simple_1NN_classifier(ret, codes, trn_lbls, verbose)
     return (err_perf, err_avg, err_loss, err_noise, err_1nn)

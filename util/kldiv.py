@@ -82,7 +82,7 @@ def shannon_entropy_set(dataset, b=2, verbose=False):
     return shannon_entropy(dist, b, verbose)
 
 
-def measure_data_distribution(p, q, entropy_b=2, verbose=False, name=""):
+def measure_data_distribution(p, q, entropy_b=2, verbose=False):
     """
     Measures how well-distributed a dataset is
     @param dataset: dataset
@@ -94,16 +94,16 @@ def measure_data_distribution(p, q, entropy_b=2, verbose=False, name=""):
     kl = kl_divergence(p, q)
     e = shannon_entropy(p, b=entropy_b)
     if verbose:
-        print(f"{name}_dist_d={d:.5f}, {name}_dist_kl={kl:.5f}, {name}_dist_e={e:.5f}")
+        print(f"d_unif={d:.5f}, KL_div={kl:.5f}, shannon_e={e:.5f}")
     return (d, kl, e)
 
 
-def measure_data_distribution_set(dataset, entropy_b=2, verbose=False, name=""):
+def measure_data_distribution_set(dataset, entropy_b=2, verbose=False):
     """
     Dataset interface
     """
     p, q = distributions(dataset)
-    return measure_data_distribution(p, q, entropy_b, verbose, name)
+    return measure_data_distribution(p, q, entropy_b, verbose)
 
 
 """

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_error_evolution(clean, dirty,name):
+def plot_error_evolution(clean, dirty, name):
 
     diff = dirty - clean
 
@@ -94,7 +94,7 @@ def plot_examples(imgs, lbls, clean, dirty, name="dirtyClean"):
 param_id = "k20_Fs2_ep5_b0.8_Q21_Tw0.95"
 
 # MLP
-dim_hid = [200,200]
+dim_hid = [200, 200]
 dim_in = 20 * 21 * 21
 dim_out = 28 * 28
 
@@ -111,12 +111,11 @@ batch_size = 4
 size = 1000
 
 trn_n = 6 * size
-val_n = 2 * size  
+val_n = 2 * size
 tst_n = 1 * size
 
 tst_model = True
 save_model = True
-
 
 
 """ #CNN
@@ -163,8 +162,8 @@ convT_pad = (Fs, Fs)  # for same padding
 
 
 model_name = "MLP_decoder[200, 200]_n_30000"
-#model_name = "CNN_init_False_n_12000"
-#model_name = "CNN_init_True_n_12000"
+# model_name = "CNN_init_False_n_12000"
+# model_name = "CNN_init_True_n_12000"
 model_PATH = f"pickles/{model_name}.pt"
 
 imgs, lbls, _, _ = read_mnist()
@@ -179,7 +178,7 @@ codes = codes[:trn_n].toarray()
 ret = ret[:trn_n].toarray()
 
 device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
-print(f'Selected device: {device}')
+print(f"Selected device: {device}")
 model = MLP(input_dim=dim_in, output_dim=dim_out, hidden_dim_list=dim_hid).to(device)
 """ model = deCNN_MLP(
             l1_in_dim,
@@ -192,10 +191,10 @@ model.load_state_dict(torch.load(model_PATH))
 
 model.eval()
 codes = torch.Tensor(codes)
-#codes = codes.to(device)
+# codes = codes.to(device)
 ret = torch.Tensor(ret)
-#ret = ret.to(device)
-                
+# ret = ret.to(device)
+
 clean = (model(codes)).detach().numpy().reshape((trn_n, 28, 28))
 
 dirty = (model(ret)).detach().numpy().reshape((trn_n, 28, 28))

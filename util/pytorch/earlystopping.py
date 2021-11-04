@@ -13,7 +13,7 @@ class EarlyStopping:
         path="pickles/",
         name="model",
         trace_func=print,
-        save_model = False
+        save_model=False,
     ):
         """
         Args:

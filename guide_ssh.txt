@@ -1,6 +1,6 @@
-ssh rodrigo@146.193.224.245
-windows command:
-C:/Users/rodrigo/AppData/Local/Programs/Python/Python39/python.exe c:/Users/rodrigo/Desktop/MasterThesis/main_whatwhere.py 0
+1- ssh rodrigo@146.193.224.245
+2- wsl.exe
+
 
 tmux   : cria um session nova
 tmux a :para connectar
@@ -18,3 +18,6 @@ Ctr+b :para commandos tmux:
     p previous window
     % split vertically
     " split horizontally
+
+windows command:
+C:/Users/rodrigo/AppData/Local/Programs/Python/Python39/python.exe c:/Users/rodrigo/Desktop/MasterThesis/main_whatwhere.py 0

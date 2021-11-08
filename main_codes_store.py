@@ -17,11 +17,11 @@ n_epochs = 5  # for the k means feature detection
 b = 0.8  # minimum activity of the filters: prevents empty feature detection
 wta = True  # winner takes all
 
-list_Fs = [2]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-list_Tw = [0.5, 0.9]  # Treshod for keeping or discarding a detected feature
+list_Fs = [1,2,3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
+list_Tw = [0.5, 0.7, 0.9]  # Treshod for keeping or discarding a detected feature
 
-data_step = 8000
-data_max = 40000
+data_step = 10000
+data_max = 60000
 save_ret = False
 
 
@@ -39,8 +39,8 @@ for Fs in list_Fs:
     for T_what in list_Tw:
         features = compute_features(trn_imgs, K, Fs, rng, n_epochs, b)
 
-        codes, tst_codes = compute_codes(
-            trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=True
+        codes, _ = compute_codes(
+            trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=False
         )
 
         coded_AS, coded_densest = measure_sparsity(codes)

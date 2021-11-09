@@ -37,10 +37,12 @@ use_wandb = True
 
 for Fs in list_Fs:
     for T_what in list_Tw:
-        features = compute_features(trn_imgs, K, Fs, rng, n_epochs, b)
+        features = compute_features(
+            trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b, classwise=False
+        )
 
-        codes, _, coded_AS, coded_densest = compute_codes(
-            trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=True
+        codes, _ = compute_codes(
+            trn_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, set="trn"
         )
         run_name = (
             "k"

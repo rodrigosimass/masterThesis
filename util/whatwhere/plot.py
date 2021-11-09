@@ -4,6 +4,7 @@ from util import *
 import random
 import numpy as np
 from ..basic_utils import best_layout, binary_sparsity
+from util.kldiv import *
 
 rand = 2
 
@@ -142,7 +143,7 @@ def plot_examples(D, X_trn, K, k, Q, run_name, set, num_examples=3):
     plt.savefig(f"img/whatwhere/{run_name}__codes_{set}.png")
 
 
-def plot_sparsity_distribution(codes, k, Q, run_name, AS, densest, set="C"):
+def plot_sparsity_distribution(codes, k, Q, run_name, set="C"):
     plt.close()
 
     Tr = codes.toarray()
@@ -183,10 +184,13 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
     codes = codes.toarray().reshape(-1, k * Q * Q)
     mnist = mnist.reshape(-1, 28 * 28)
 
+    _, _, entropy_codes = measure_data_distribution_set(codes)
+    _, _, entropy_mnist = measure_data_distribution_set(mnist)
+
     avg_codes = np.sort(np.average(codes, axis=0))
     avg_mnist = np.sort(np.average(mnist, axis=0))
 
-    axs[0].set_title(f"Mnist activity (1D)")
+    axs[0].set_title(f"Mnist activity (1D) e={entropy_mnist:.5f}")
     axs[0].bar(
         np.arange(avg_mnist.shape[0]),
         avg_mnist.flatten(),
@@ -198,7 +202,7 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
     axs[0].set_xlim([1, avg_mnist.shape[0]])
     axs[0].set_ylim([0.0, np.max(avg_mnist)])
 
-    axs[1].set_title(f"Whatwhere activity (1D)")
+    axs[1].set_title(f"Whatwhere activity (1D) e={entropy_codes:.5f}")
     axs[1].bar(
         np.arange(avg_codes.shape[0]),
         avg_codes,
@@ -215,25 +219,27 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
     plt.savefig(f"img/whatwhere/{run_name}__comparisson_{set}.png")
 
 
-def plot_class_activity_1D(codes, labels, k, Q, run_name, set):
+def plot_class_activity_1D(codes, labels, k, Q, run_name, set="C"):
 
     plt.close()
 
-    Tr = codes.toarray()
-    size = Tr.shape[0]
+    codes = codes.toarray()
+    size = codes.shape[0]
     labels = labels[:size]
-    Tr = Tr.reshape(size, k * Q * Q)
+    codes = codes.reshape(size, Q * Q, k)
 
     fig, axs = plt.subplots(10, 1)
 
-    fig.suptitle(f"Average pixel activity per class ({set} set)", fontsize=16)
+    fig.suptitle(f"Usage of kernels per class", fontsize=16)
 
     for i in range(10):
-        avgImg = np.average(Tr[labels == i], 0)
+        imgData = np.average(codes[labels == i], 0)  # (N,Q*Q,K) -> (Q*Q,K)
+        imgData = np.average(imgData, axis=0)  # (Q*Q,K) -> (K)
+
         ax = axs[i]
         ax.bar(
-            np.arange(k * Q * Q),
-            avgImg.flatten(),
+            np.arange(k),
+            imgData.flatten(),
             align="center",
             alpha=0.7,
             color="Black",
@@ -241,8 +247,36 @@ def plot_class_activity_1D(codes, labels, k, Q, run_name, set):
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_ylabel(i, rotation=0)
+        ax.set_xlabel("k")
 
     plt.savefig(f"img/whatwhere/{run_name}__WW_classes_1D_{set}.png")
+
+
+def plot_class_activity_1D_stacked(codes, labels, k, Q, run_name, set="C"):
+
+    plt.close()
+
+    codes = codes.toarray()
+    size = codes.shape[0]
+    labels = labels[:size]
+    codes = codes.reshape(size, Q * Q, k)
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle(f"Usage of kernels", fontsize=16)
+
+    prev = np.zeros(k)
+    for i in range(10):
+        curr = np.average(codes[labels == i], 0)  # (N,Q*Q,K) -> (Q*Q,K)
+        curr = np.average(curr, axis=0)  # (Q*Q,K) -> (K)
+
+        ax.bar(x=np.arange(k), height=curr, bottom=prev, label=str(i))
+        prev = prev + curr
+
+    ax.set_ylabel("frequency")
+    ax.legend()
+
+    plt.savefig(f"img/whatwhere/{run_name}__WW_classes_1D_stacked_{set}.png")
 
 
 def plot_class_activity_2D(codes, labels, k, Q, run_name, set="C"):

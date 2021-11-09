@@ -10,9 +10,32 @@ import torchvision as torchv
 import torch
 from tqdm import trange
 from tqdm import tqdm
+from .encoder import translation, scale
 
 
-def reconstruct_set(codes, features, Q, K):
+def unpack_polar_params(params):
+    C, rad = params
+    cx, cy = C
+    return (cx, cy, rad)
+
+
+# codes (N,Q,Q,K) -> recons(N,I,J) (image space)
+def recon_img_space(codes, features, polar_params, Q, K, I, J):
+    recon = np.zeros((codes.shape[0], I, J))
+    codes = codes.reshape((-1, Q, Q, K))
+    for i in trange(
+        codes.shape[0], desc="reconstructing", unit="datasamples", leave=False
+    ):
+        params = polar_params[i]
+        pol = ungrid(codes[i])
+        ret = unpolar(pol, params)
+        h = unenum(ret, I, J, K)
+        recon[i] = reconstruct(h, features)
+    return recon
+
+
+# codes (N,Q,Q,K) -> recons(N,Q,Q) (memory space)
+def recon_mem_space(codes, features, Q, K):
     recon = np.zeros((codes.shape[0], Q, Q))
     codes = codes.reshape((-1, Q, Q, K))
     for i in range(codes.shape[0]):
@@ -77,3 +100,39 @@ def recon_grid(recons, size, num_examples=10):
     tensor = torch.unsqueeze(tensor, dim=1)
     grid = torchv.utils.make_grid(tensor, normalize=True, nrow=10, pad_value=1)
     return grid
+
+
+def ungrid(a):
+    Q, Q, n_K = a.shape
+    k = np.linspace(1, n_K, n_K)
+    h = np.flip(np.linspace(-1, 1, Q))
+    w = np.linspace(-1, 1, Q)
+    W, H, K = np.meshgrid(w, h, k)
+    k = K[a != 0]
+    h = H[a != 0]
+    w = W[a != 0]
+    as_set = np.zeros((k.shape[0], 3))
+    as_set[:, 0] = w
+    as_set[:, 1] = h
+    as_set[:, 2] = k
+    return as_set
+
+
+def unpolar(pol, params):
+    C, rad = params
+    cx, cy = C
+    ret = translation(scale(pol, 1.0 / rad), cx, cy)
+    return ret
+
+
+def unenum(ret, n_H, n_W, k):
+    ret_set = np.zeros((ret.shape[0], 3))
+    ret_set[:, 0] = ((ret[:, 1] + 1) / 2) * (n_W - 1)
+    ret_set[:, 1] = ((ret[:, 0] + 1) / 2) * (n_H - 1)
+    ret_set[:, 2] = ret[:, 2]
+    h = np.histogramdd(
+        ret_set, bins=(n_H, n_W, k), range=[(0, n_H - 1), (0, n_W - 1), (1, k)]
+    )[0]
+    h = np.flip(h, axis=0)  # for visualization purposes
+    h[h > 0] = 1
+    return h

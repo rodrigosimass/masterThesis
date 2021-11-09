@@ -157,12 +157,13 @@ def rotation(features, theta):  # nao usado no paper
 
 
 def polar_transform(x):
-    cx, cy = np.mean(x[:, 0:2], axis=0)  # center
+    cx, cy = np.mean(x[:, 0:2], axis=0)
     w = x[:, 0]
     h = x[:, 1]
-    rad = np.max(np.sqrt((w - cx) ** 2 + (h - cy) ** 2))  # radius
+    rad = np.max(np.sqrt((w - cx) ** 2 + (h - cy) ** 2))
     pol = scale(translation(x, -cx, -cy), rad)
-    return pol
+    params = (np.array([cx, cy]), rad)
+    return pol, params
 
 
 def grid_encoding(x, Q, k):
@@ -178,8 +179,59 @@ def grid_encoding(x, Q, k):
     return h
 
 
+def learn_classwise_features(
+    trn_imgs, trn_lbls, k, Fs, rng, n_epochs, background=0.8, num_classes=10
+):
+
+    if k % 10 != 0:
+        print(f"ERROR: K must be multiple of <{num_classes}> for classwise features")
+        exit(0)
+    else:
+        k_per_class = int(k / 10)
+
+    patch_size = (
+        1 + 2 * Fs,
+        1 + 2 * Fs,
+    )
+
+    kernels = np.zeros((k, 1 + 2 * Fs, 1 + 2 * Fs))
+
+    for i in trange(num_classes, desc="Learning dictionary (classwise)", unit="class"):
+        class_imgs = trn_imgs[trn_lbls == i]
+        kmeans = MiniBatchKMeans(n_clusters=k_per_class, random_state=rng, verbose=True)
+        buffer = []
+        index = 0
+
+        for _ in trange(n_epochs, unit="epoch", leave=False):
+            for img in tqdm(class_imgs, unit="data point", leave=False):
+                data = to_windows(
+                    img, patch_size, tuple(np.ones(len(patch_size)).astype(int))
+                )
+                norms = np.linalg.norm(data, axis=1, keepdims=True)
+                keep = norms > background
+                keep = keep[:, 0]
+                data = data[keep, :]
+                # norms = norms[keep,:]
+                # data = data / norms
+                data = np.reshape(data, (len(data), -1))
+                buffer.append(data)
+                index += 1
+                if index % 10 == 0:
+                    data = np.concatenate(buffer, axis=0)
+                    # data -= np.mean(data, axis=0)
+                    # data /= np.std(data, axis=0)
+                    kmeans.partial_fit(data)
+                    buffer = []
+
+        kernels[
+            i * k_per_class : (i + 1) * k_per_class
+        ] = kmeans.cluster_centers_.reshape((-1,) + patch_size)
+
+    return kernels
+
+
 def learn_features(
-    trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None, verbose=False
+    trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None
 ):
 
     patch_size = (
@@ -191,7 +243,6 @@ def learn_features(
         kmeans = MiniBatchKMeans(n_clusters=k, random_state=rng, verbose=True)
     buffer = []
     index = 0
-
     for _ in trange(n_epochs, desc="Learning dictionary", unit="epoch"):
         for img in tqdm(trn_imgs, unit="datasamples", leave=False):
             data = to_windows(
@@ -213,23 +264,27 @@ def learn_features(
                 kmeans.partial_fit(data)
                 buffer = []
 
-    return kmeans.cluster_centers_.reshape((-1,) + patch_size), kmeans
+    return kmeans.cluster_centers_.reshape((-1,) + patch_size)
 
 
-def learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta):
+def learn_codes(trn_imgs, k, Q, features, T_what, wta):
     codes = np.zeros((trn_imgs.shape[0], k * Q ** 2))
+
+    polar_params = []
+
     for i in trange(trn_imgs.shape[0], desc="Generating codes", unit="datasample"):
         img = trn_imgs[i]
         a = mu_ret(img, features, T_what, wta=wta)
         s = enum_set(a)
         if s.size != 0:
-            p = polar_transform(s)
+            p, params = polar_transform(s)
+            polar_params.append(params)
             e = grid_encoding(p, Q, features.shape[0])
             codes[i] = e.flatten()
         else:
             codes[i] = np.zeros(k * Q * Q)
 
-    return csr_matrix(codes)
+    return csr_matrix(codes), polar_params
 
 
 def measure_sparsity(codes, verbose=False):

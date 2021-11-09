@@ -2,74 +2,25 @@ import pickle
 from .whatwhere.encoder import *
 from .willshaw.memory import *
 
+""" RUN-NAME GETTERS """
 
-def save_ret(ret, k, Q, Fs, n_epochs, b, T_what):
-    run_name = "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-    run_name += "_Q" + str(Q) + "_Tw" + str(T_what)
-    pickle.dump(
-        ret,
-        open(f"pickles/{run_name}__ret.p", "wb"),
+
+def get_features_run_name(k, Fs, n_epochs, b, classwise):
+    return (
+        "k"
+        + str(k)
+        + "_Fs"
+        + str(Fs)
+        + "_ep"
+        + str(n_epochs)
+        + "_b"
+        + str(b)
+        + "_cw"
+        + str(classwise)
     )
 
 
-def load_ret(run_name):
-    try:
-        ret = pickle.load(open(f"pickles/{run_name}__ret.p", "rb"))
-    except (OSError, IOError) as _:
-        print(f"ERROR: file <<pickles/{run_name}__ret.p>> not found...")
-        exit(1)
-
-    return ret
-
-
-def load_codes(run_name):
-    try:
-        trn_ww = pickle.load(open(f"pickles/{run_name}__ww_trn.p", "rb"))
-    except (OSError, IOError) as _:
-        print(f"ERROR: file <<pickles/{run_name}__ww_trn.p>> not found...")
-        exit(1)
-
-    try:
-        tst_ww = pickle.load(open(f"pickles/{run_name}__ww_tst.p", "rb"))
-    except (OSError, IOError) as _:
-        print(f"ERROR: file <<pickles/{run_name}__ww_tst.p>> not found...")
-        exit(1)
-
-    return (trn_ww, tst_ww)
-
-
-def get_features_run_name(k, Fs, n_epochs, b):
-    return "k" + str(k) + "_Fs" + str(Fs) + "_ep" + str(n_epochs) + "_b" + str(b)
-
-
-def load_features(run_name):
-    try:
-        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
-    except (OSError, IOError) as _:
-        print(f"ERROR: file <<pickles/{run_name}__features.p>> not found...")
-        exit(1)
-    return features
-
-
-def compute_features(trn_imgs, k, Fs, rng, n_epochs, b, plot=False, verbose=False):
-    run_name = get_features_run_name(k, Fs, n_epochs, b)
-    try:
-        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
-        if verbose:
-            print(f"loaded features from pickles/{run_name}__features.p")
-    except (OSError, IOError) as _:
-        features, _ = learn_features(
-            trn_imgs, k, Fs, rng, n_epochs, background=b, verbose=verbose
-        )
-        pickle.dump(
-            features,
-            open(f"pickles/{run_name}__features.p", "wb"),
-        )
-
-    return features
-
-
-def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what):
+def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta):
     return (
         "k"
         + str(k)
@@ -83,122 +34,96 @@ def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what):
         + str(Q)
         + "_Tw"
         + str(T_what)
+        + "_wta"
+        + str(wta)
     )
 
 
-def compute_codes(
+""" LOADERS - load file, exit() on error"""
+
+
+def load_ret(run_name, set="trn"):
+    try:
+        ret = pickle.load(open(f"pickles/{run_name}__ret_{set}.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__ret_{set}.p>> not found...")
+        exit(1)
+    return ret
+
+
+def load_codes(run_name, set="trn"):
+    try:
+        codes = pickle.load(open(f"pickles/{run_name}__codes_{set}.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__codes_{set}.p>> not found...")
+        exit(1)
+
+    return codes
+
+
+def load_features(run_name):
+    try:
+        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
+    except (OSError, IOError) as _:
+        print(f"ERROR: file <<pickles/{run_name}__features.p>> not found...")
+        exit(1)
+    return features
+
+
+def compute_features(
     trn_imgs,
-    tst_imgs,
+    trn_lbls,
     k,
-    Q,
-    features,
-    T_what,
-    wta,
+    Fs,
+    rng,
     n_epochs,
     b,
-    Fs,
     verbose=False,
-    test=False,
+    classwise=False,
 ):
-    run_name = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
+    run_name = get_features_run_name(k, Fs, n_epochs, b, classwise)
+    try:
+        features = pickle.load(open(f"pickles/{run_name}__features.p", "rb"))
+        if verbose:
+            print(f"loaded features from pickles/{run_name}__features.p")
+    except (OSError, IOError) as _:
+        if classwise:
+            features = learn_classwise_features(
+                trn_imgs, trn_lbls, k, Fs, rng, n_epochs, background=b
+            )
+        else:
+            features = learn_features(trn_imgs, k, Fs, rng, n_epochs, background=b)
+        pickle.dump(
+            features,
+            open(f"pickles/{run_name}__features.p", "wb"),
+        )
+
+    return features
+
+
+def compute_codes(
+    imgs, k, Q, features, T_what, wta, n_epochs, b, Fs, verbose=False, set="trn"
+):
+    run_name = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta)
 
     try:
-        codes = pickle.load(open(f"pickles/{run_name}__ww_trn.p", "rb"))
+        codes = pickle.load(open(f"pickles/{run_name}__codes_{set}.p", "rb"))
+        polar_params = pickle.load(open(f"pickles/{run_name}__polar_{set}.p", "rb"))
         if verbose:
-            print(f"loaded codes from : pickles/{run_name}__ww_trn.p")
+            print(f"loaded codes from : pickles/{run_name}__codes_{set}.p")
+            print(f"loaded polar params from : pickles/{run_name}__polar_{set}.p")
     except (OSError, IOError) as _:
-        codes = learn_codes(trn_imgs, k, Q, verbose, features, T_what, wta)
+        codes, polar_params = learn_codes(imgs, k, Q, features, T_what, wta)
         if verbose:
-            print(f"saving codes to pickles/{run_name}__ww_trn.p")
+            print(f"saving codes to pickles/{run_name}__codes_{set}.p")
+            print(f"saving polar params to pickles/{run_name}__polar_{set}.p")
         pickle.dump(
             codes,
-            open(f"pickles/{run_name}__ww_trn.p", "wb"),
+            open(f"pickles/{run_name}__codes_{set}.p", "wb"),
         )
-
-    codes_tst = None
-    if test:
-        try:
-            codes_tst = pickle.load(open(f"pickles/{run_name}__ww_tst.p", "rb"))
-            if verbose:
-                print(f"loaded codes from : pickles/{run_name}__ww_tst.p")
-        except (OSError, IOError) as _:
-            codes_tst = learn_codes(tst_imgs, k, Q, verbose, features, T_what, wta)
-            if verbose:
-                print(f"saving codes to pickles/{run_name}__ww_tst.p")
-            pickle.dump(
-                codes_tst,
-                open(f"pickles/{run_name}__ww_tst.p", "wb"),
-            )
-
-    return (codes, codes_tst)
-
-
-def compute_will(run_name, codes_csr, factor_of_stored, verbose=False):
-    num_stored = 784 * factor_of_stored
-    try:
-        will = pickle.load(
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "rb")
-        )
-        if verbose:
-            print(
-                f"loaded will from : pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-    except (OSError, IOError) as _:
-        will = train(codes_csr, num_stored)
         pickle.dump(
-            will,
-            open(f"pickles/{run_name}_fac{factor_of_stored}__will.p", "wb"),
-        )
-        if verbose:
-            print(
-                f"saving trained willshaw to pickles/{run_name}_fac{factor_of_stored}__will.p"
-            )
-
-    sparsity = will.nnz / (will.shape[0] * will.shape[1])
-
-    if verbose:
-        if np.array_equal(will.toarray(), (will.toarray()).T):
-            print("[OK] Willshaw matrix is symmetric")
-
-        print(
-            f"""W martix sparsity = {sparsity}
-        """
+            polar_params,
+            open(f"pickles/{run_name}__polar_{set}.p", "wb"),
         )
 
-    return (will, sparsity)
-
-
-def compute_ret(
-    run_name,
-    codes,
-    will,
-    factor_of_stored,
-    verbose=False,
-):
-
-    try:
-        ret = pickle.load(
-            open(f"pickles/{run_name}_fac{factor_of_stored}__ret.p", "rb")
-        )
-        if verbose:
-            print(f"loaded ret from : pickles/{run_name}_fac{factor_of_stored}__ret.p")
-    except (OSError, IOError) as _:
-        ret = retreive(codes, will)
-        pickle.dump(
-            ret,
-            open(f"pickles/{run_name}_fac{factor_of_stored}__ret.p", "wb"),
-        )
-        if verbose:
-            print(f"saving ret to pickles/{run_name}_fac{factor_of_stored}__ret.p")
-
-    AS = ret.nnz / (ret.shape[0] * ret.shape[1])
-    densest = np.max(csr_matrix.sum(ret, axis=1)) / ret.shape[1]
-    if verbose:
-        print(
-            f"""Coded set:
-                avg sparsity = {AS}
-                densest (%B) = {densest}
-        """
-        )
-
-    return (ret, AS, densest)
+    return (codes, polar_params)

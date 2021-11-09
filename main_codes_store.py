@@ -9,6 +9,7 @@ from util.pytorch.tools import np_to_grid
 import wandb
 from util.kldiv import *
 from tqdm import trange
+from sklearn.metrics import mean_squared_error
 
 rng = np.random.RandomState(0)  # reproducible
 K = 20  # number of k-means centroids
@@ -17,15 +18,16 @@ n_epochs = 5  # for the k means feature detection
 b = 0.8  # minimum activity of the filters: prevents empty feature detection
 wta = True  # winner takes all
 
-list_Fs = [1,2,3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-list_Tw = [0.5, 0.7, 0.9]  # Treshod for keeping or discarding a detected feature
+list_Fs = [2]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
+list_Tw = [0.9]  # Treshod for keeping or discarding a detected feature
 
-data_step = 10000
-data_max = 60000
-save_ret = False
+data_step = 100
+data_max = 600
 
 
 trn_imgs, trn_lbls, tst_imgs, tst_lbls = read_mnist(n_train=60000)
+I = trn_imgs.shape[1]
+J = trn_imgs.shape[2]
 
 n_runs = len(list_Fs) * len(list_Tw) * (data_max / data_step)
 run_idx = 0
@@ -37,10 +39,22 @@ USE_WANDB = bool(int(sys.argv[1]))
 
 for Fs in list_Fs:
     for T_what in list_Tw:
-        features = compute_features(trn_imgs, K, Fs, rng, n_epochs, b)
+        features = compute_features(
+            trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b, verbose=True
+        )
 
-        codes, _ = compute_codes(
-            trn_imgs, tst_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, test=False
+        codes, polar_params = compute_codes(
+            trn_imgs,
+            K,
+            Q,
+            features,
+            T_what,
+            wta,
+            n_epochs,
+            b,
+            Fs,
+            verbose=True,
+            set="trn",
         )
 
         coded_AS, coded_densest = measure_sparsity(codes)
@@ -80,8 +94,10 @@ for Fs in list_Fs:
             log_dict = {}
             log_dict["MNIST"] = wandb.Image(np_to_grid(ex_img))
             log_dict["Coded Set"] = wandb.Image(code_grid(ex_cod, K, Q))
-            ex_rec_c = reconstruct_set(ex_cod, features, Q, K)  # from coded
-            log_dict["Reconstruction (C)"] = wandb.Image(np_to_grid(ex_rec_c))
+            ex_rec_img = recon_img_space(ex_cod, features, polar_params, Q, K, I, J)
+            ex_rec_mem = recon_mem_space(ex_cod, features, Q, K)
+            log_dict["Reconstruction (I*J)"] = wandb.Image(np_to_grid(ex_rec_img))
+            log_dict["Reconstruction (Q*Q)"] = wandb.Image(np_to_grid(ex_rec_mem))
             wandb.log(log_dict, step=0)
 
         will = None
@@ -90,6 +106,7 @@ for Fs in list_Fs:
             new_data = codes[num_stored - data_step : num_stored]
             will = incremental_train(new_data, will)
             ret = retreive(codes[:num_stored], will)
+            recons = recon_img_space(ret.toarray(), features, polar_params, Q, K, I, J)
 
             # measurements
             ret_AS, ret_densest = measure_sparsity(ret)
@@ -102,6 +119,9 @@ for Fs in list_Fs:
             will_S = willshaw_sparsity(will)
             err_perfRet, err_avgErr, err_infoLoss, err_noise, err_1nn = performance(
                 codes, ret, trn_lbls, verbose=False
+            )
+            recon_mse = mean_squared_error(
+                trn_imgs[:num_stored].flatten(), recons.flatten()
             )
 
             if USE_WANDB:
@@ -123,18 +143,18 @@ for Fs in list_Fs:
                     "err_infoLoss": err_infoLoss,
                     "err_noise": err_noise,
                     "err_avgErr": err_avgErr,
+                    "recon_mse": recon_mse,
                 }
 
                 ex_ret = ret[ex_idxs].toarray()
-                ex_rec_d = reconstruct_set(ex_ret, features, Q, K)  # from ret
+                ex_rec_img = recon_img_space(ex_ret, features, polar_params, Q, K, I, J)
+                ex_rec_mem = recon_mem_space(ex_ret, features, Q, K)
 
                 log_dict["Retrieved Set"] = wandb.Image(code_grid(ex_ret, K, Q))
-                log_dict["Reconstruction (R)"] = wandb.Image(np_to_grid(ex_rec_d))
+                log_dict["Reconstruction (I*J)"] = wandb.Image(np_to_grid(ex_rec_img))
+                log_dict["Reconstruction (Q*Q)"] = wandb.Image(np_to_grid(ex_rec_mem))
 
                 wandb.log(log_dict, step=num_stored)
-
-        if save_ret:
-            save_ret(ret, K, Q, Fs, n_epochs, b, T_what)
 
         if USE_WANDB:
             wandb.finish()

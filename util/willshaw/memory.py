@@ -35,10 +35,8 @@ def incremental_train(new_data, current_W=None):
         will = np.zeros((n, n))
     else:
         will = current_W.toarray()
-
-    for pattern in tqdm(
-        new_data, desc="Updating willshaw", leave=False
-    ):  # for each pattern to store in will
+    for i in trange(new_data.shape[0], desc="Updating willshaw", leave=False):
+        pattern = new_data[i]
         num_nz = len(pattern.indices)
         for i in range(num_nz):
             # nz has the indexes of x that are non-zero

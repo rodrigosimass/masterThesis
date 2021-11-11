@@ -122,6 +122,7 @@ def unpolar(pol, params):
     C, rad = params
     cx, cy = C
     ret = translation(scale(pol, 1.0 / rad), cx, cy)
+    # TODO if rad=0 then return empty array
     return ret
 
 

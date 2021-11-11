@@ -18,19 +18,13 @@ n_epochs = 5  # for the k means feature detection
 b = 0.8  # minimum activity of the filters: prevents empty feature detection
 wta = True  # winner takes all
 
-list_Fs = [2]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-list_Tw = [0.9]  # Treshod for keeping or discarding a detected feature
-
-data_step = 100
-data_max = 600
+list_Fs = [1, 2, 3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
+list_Tw = [0.85, 0.9, 0.95]  # Treshod for keeping or discarding a detected feature
 
 
 trn_imgs, trn_lbls, tst_imgs, tst_lbls = read_mnist(n_train=60000)
 I = trn_imgs.shape[1]
 J = trn_imgs.shape[2]
-
-n_runs = len(list_Fs) * len(list_Tw) * (data_max / data_step)
-run_idx = 0
 
 if len(sys.argv) < 2:
     print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
@@ -40,7 +34,7 @@ USE_WANDB = bool(int(sys.argv[1]))
 for Fs in list_Fs:
     for T_what in list_Tw:
         features = compute_features(
-            trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b, verbose=True
+            trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b, verbose=False
         )
 
         codes, polar_params = compute_codes(
@@ -53,17 +47,20 @@ for Fs in list_Fs:
             n_epochs,
             b,
             Fs,
-            verbose=True,
+            verbose=False,
             set="trn",
         )
 
-        coded_AS, coded_densest = measure_sparsity(codes)
-
-        coded_dist_d, coded_dist_kl, coded_dist_e = measure_data_distribution_set(
-            codes.toarray()
-        )
+        code_size = codes.shape[1]
 
         if USE_WANDB:
+
+            coded_AS, coded_densest = measure_sparsity(codes)
+
+            coded_dist_d, coded_dist_kl, coded_dist_e = measure_data_distribution_set(
+                codes.toarray()
+            )
+
             wandb.init(
                 project="whatwhere_mock",
                 entity="rodrigosimass",
@@ -80,13 +77,11 @@ for Fs in list_Fs:
                     "codes_dist_d": coded_dist_d,
                     "codes_dist_kl": coded_dist_kl,
                     "codes_dist_e": coded_dist_e,
-                    "data_step": data_step,
-                    "data_max": data_max,
                 },
             )
 
             # 10 examples for visualization purposes
-            ex_idxs = idxs_1_random_per_class(trn_lbls[:data_step])
+            ex_idxs = idxs_1_random_per_class(trn_lbls[:code_size])
             ex_img = trn_imgs[ex_idxs]
             ex_cod = codes[ex_idxs].toarray()
 
@@ -100,10 +95,17 @@ for Fs in list_Fs:
             log_dict["Reconstruction (Q*Q)"] = wandb.Image(np_to_grid(ex_rec_mem))
             wandb.log(log_dict, step=0)
 
-        will = None
-        for num_stored in trange(data_step, data_max + 1, data_step, desc="Storing"):
+        max_fos = int(codes.shape[0] / codes.shape[1])
+        max_fos = 1
 
-            new_data = codes[num_stored - data_step : num_stored]
+        will = None
+        for fos in trange(
+            1, max_fos + 1, desc="Storing", unit="factor of stored (fos)"
+        ):
+
+            num_stored = code_size * fos
+
+            new_data = codes[num_stored - code_size : num_stored]
             will = incremental_train(new_data, will)
             ret = retreive(codes[:num_stored], will)
             recons = recon_img_space(ret.toarray(), features, polar_params, Q, K, I, J)

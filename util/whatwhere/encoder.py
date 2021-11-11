@@ -140,9 +140,6 @@ def translation(features, C_x, C_y):
 
 
 def scale(features, rad):
-    if rad == 0:
-        # TODO: VER COM O lUIS SE ISTO E NA BOA
-        rad = 1
     pos = np.copy(features)
     M = np.diag([1.0 / rad, 1.0 / rad])
     pos[:, 0:2] = np.dot(M, pos[:, 0:2].T).T
@@ -156,14 +153,22 @@ def rotation(features, theta):  # nao usado no paper
     return pos
 
 
-def polar_transform(x):
+def compute_polar_params(x):
     cx, cy = np.mean(x[:, 0:2], axis=0)
     w = x[:, 0]
     h = x[:, 1]
     rad = np.max(np.sqrt((w - cx) ** 2 + (h - cy) ** 2))
+
+    return (cx, cy, rad)
+
+
+def polar_transform(x, cx, cy, rad):
+    if rad == 0:
+        print("Zero rad!")
+        return None
     pol = scale(translation(x, -cx, -cy), rad)
-    params = (np.array([cx, cy]), rad)
-    return pol, params
+
+    return pol
 
 
 def grid_encoding(x, Q, k):
@@ -230,9 +235,7 @@ def learn_classwise_features(
     return kernels
 
 
-def learn_features(
-    trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None
-):
+def learn_features(trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None):
 
     patch_size = (
         1 + 2 * Fs,
@@ -272,17 +275,35 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
 
     polar_params = []
 
+    cnt_a = 0
+    cnt_rad = 0
+
     for i in trange(trn_imgs.shape[0], desc="Generating codes", unit="datasample"):
         img = trn_imgs[i]
         a = mu_ret(img, features, T_what, wta=wta)
         s = enum_set(a)
+
         if s.size != 0:
-            p, params = polar_transform(s)
-            polar_params.append(params)
-            e = grid_encoding(p, Q, features.shape[0])
-            codes[i] = e.flatten()
+            cx, cy, rad = compute_polar_params(s)
+            if rad != 0:
+                params = (np.array([cx, cy]), rad)
+                p = polar_transform(s, cx, cy, rad)
+                polar_params.append(params)
+                e = grid_encoding(p, Q, features.shape[0])
+                codes[i] = e.flatten()
+            else:
+                cnt_rad += 1
+                codes[i] = np.zeros(k * Q * Q)
         else:
+            cnt_a += 1
             codes[i] = np.zeros(k * Q * Q)
+
+    print(
+        f"Warning:\n{cnt_a} with zero activity and {cnt_rad} with zero rad were discarded"
+    )
+
+    codes = codes[~np.all(codes == 0, axis=1)]
+    # print(f"codes shape: {codes.shape[0]}")
 
     return csr_matrix(codes), polar_params
 

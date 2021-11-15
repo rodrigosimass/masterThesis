@@ -4,7 +4,6 @@ from sklearn.cluster import MiniBatchKMeans
 from skimage.util import view_as_windows
 import pickle
 from scipy.sparse import csr_matrix
-from .plot import *
 import sys
 import torchvision as torchv
 import torch
@@ -298,11 +297,12 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
             cnt_a += 1
             codes[i] = np.zeros(k * Q * Q)
 
-    print(
-        f"Warning:\n{cnt_a} with zero activity and {cnt_rad} with zero rad were discarded"
-    )
+    if cnt_a + cnt_rad > 0:
+        print(
+            f"WARNING: {cnt_a} zero activity, and {cnt_rad} zero rad codes were discarded"
+        )
 
-    codes = codes[~np.all(codes == 0, axis=1)]
+    # codes = codes[~np.all(codes == 0, axis=1)]
     # print(f"codes shape: {codes.shape[0]}")
 
     return csr_matrix(codes), polar_params

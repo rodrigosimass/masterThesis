@@ -20,11 +20,12 @@ if __name__ == "__main__":
 
     # CODES
     k = 20
-    Fs = 2
     n_epochs = 5
     b = 0.8
     Q = 21
+    Fs = 2
     T_what = 0.95
+
     code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
 
     # MLP

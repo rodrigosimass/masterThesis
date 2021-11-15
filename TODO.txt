@@ -11,8 +11,8 @@ Housekeeping:
 [x] use wandb
 [x] retirar plots das funcoes compute or load, meter essa logica no main
 [] usar ConfigArgParse
-[] usar tqdm
-[] migrar os ficheiros para linux subsystem por causa do WSL2
+[x] usar tqdm
+[x] migrar os ficheiros para linux subsystem por causa do WSL2
 
 Experiments:
     Code generation:
@@ -22,7 +22,10 @@ Experiments:
         [x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
         [x] Fazer a kl div como deve de ser (normalizada para 1)
         [x] Tentar Shannon Entropy para medir distribuiçao dos codigos
+        [] Exprimentar com class-wise feature learning no k-means
     Willshaw:
+        [] Usar MLP como pseudo Willshaw para fazer retrieval.
+            - Ver quais os valores do Threshold do retrieval process.
 
     Decoder:
         [x] Tentar o MLP com zero Hidden layers (perceptron)

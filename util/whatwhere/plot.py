@@ -5,19 +5,29 @@ import random
 import numpy as np
 from ..basic_utils import best_layout, binary_sparsity
 from util.kldiv import *
+from .decoder import recon_mem_space, recon_img_space
+from sklearn.metrics import mean_squared_error
+import plotly.express as px
+from sklearn.manifold import TSNE
+from ..mnist.tools import idxs_1_random_per_class
 
 rand = 2
 
 
-def plot_features(W, Fs, run_name):
+def plot_features(W, Fs, cw, run_name):
 
     plt.close()
 
     patch_size = (2 * Fs + 1, 2 * Fs + 1)
 
-    bl = best_layout(W.shape[0])
+    if cw:
+        bl = (10, int(W.shape[0] / 10))
+    else:
+        bl = best_layout(W.shape[0])
 
-    _, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+    fig, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+
+    fig.suptitle(f"Visual Features learned with Kmeans\n{run_name}")
 
     aux = 0
     for i in range(bl[0]):
@@ -32,50 +42,61 @@ def plot_features(W, Fs, run_name):
             axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])
             aux += 1
+            if j == 0 and cw:
+                axs[i][j].set_ylabel(i)
 
     plt.savefig(f"img/whatwhere/{run_name}__features.png")
 
 
-def plot_feature_maps(codes, k, Q, run_name, set="C"):
+def plot_feature_maps(codes, lbls, k, Q, run_name):
     plt.close()
 
-    codes = codes.toarray().reshape((-1, Q, Q, k))
-    example = codes[rand]
+    M = np.amax(np.average(codes.toarray(), axis=0))
 
-    bl = best_layout(k)
+    fig, axs = plt.subplots(10, k)
 
-    fig, axs = plt.subplots(bl[0], bl[1], constrained_layout=True)
+    fig.suptitle(f"Average feature map for each class \n{run_name}", fontsize=8)
 
-    fig.suptitle(f"Feature maps for pattern {rand} ({set})", fontsize=16)
+    cols = ["Feature {}".format(col) for col in range(k)]
+    rows = ["Class {}".format(row) for row in range(10)]
 
-    aux = 0
-    for i in range(bl[0]):
-        for j in range(bl[1]):
-            axs[i][j].imshow(
-                example[:, :, aux],
-                vmax=1,
-                vmin=0,
-                cmap=plt.cm.gray,
-                interpolation="nearest",
-            )
+    for i in range(10):
+        class_codes = codes[lbls == i].toarray().reshape((-1, Q, Q, k))
+        avg = np.average(class_codes, axis=0)
+        for j in range(k):
+            fmap = avg[:, :, j]
+            axs[i][j].imshow(fmap, vmin=0, vmax=M, cmap=plt.cm.gray)
             axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])
-            aux += 1
 
-    plt.savefig(f"img/whatwhere/{run_name}__Fmaps_{set}.png")
+    for ax, col in zip(axs[0], cols):
+        ax.set_title(col, fontsize=3)
+
+    for ax, row in zip(axs[:, 0], rows):
+        ax.set_ylabel(row, fontsize=3)
+
+    # fig.tight_layout()
+
+    plt.savefig(f"img/whatwhere/{run_name}__classFmaps.png", dpi=300)
 
 
-def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name, set="C"):
+def plot_CNN_input(data, codes, k, Q, run_name, set="C"):
 
     plt.close()
 
-    Tr = X_trn.toarray()
-    size = Tr.shape[0]
-    Tr = Tr.reshape(size, Q, Q, k)
+    codes = codes.toarray()
+    print(codes.shape)
+    codes = codes.reshape(-1, Q * Q, k)
+    print(codes.shape)
+    codes = np.swapaxes(codes, 1, 2)
+    print(codes.shape)
+    codes = codes.reshape(-1, k, Q, Q)
+    print(codes.shape)
 
-    example = Tr[rand]
+    example = codes[rand]
+    print(example.shape)
 
-    combined = np.sum(example, axis=2)
+    combined = np.sum(example, axis=0)
 
     _, axs = plt.subplots(1, 2, constrained_layout=True)
 
@@ -91,7 +112,43 @@ def plot_feature_maps_overlaped(data, X_trn, k, Q, run_name, set="C"):
         interpolation="nearest",
     )
 
-    plt.savefig(f"img/whatwhere/{run_name}__FmapsCombined_{set}.png")
+    plt.savefig(f"img/whatwhere/CNN_test.png")
+
+
+def plot_recon_examples(imgs, lbls, codes, k, Q, run_name, features, polar):
+
+    plt.close()
+
+    rand_idxs = idxs_1_random_per_class(lbls)
+    imgs = imgs[rand_idxs]
+    codes = codes[rand_idxs]
+    codes = codes.toarray().reshape(-1, Q, Q, k)
+
+    recon_img = recon_img_space(codes, features, polar, Q, k, 28, 28)
+    combined = np.sum(codes, axis=3)
+
+    fig, axs = plt.subplots(3, 10, constrained_layout=True)
+
+    for i in range(3):
+        for j in range(10):
+            axs[i][j].set_xticks([])
+            axs[i][j].set_yticks([])
+
+    for i in range(10):
+        axs[0][i].imshow(imgs[i].reshape((28, 28)), cmap=plt.cm.gray)
+        axs[1][i].imshow(combined[i], cmap=plt.cm.gray)
+        axs[2][i].imshow(recon_img[i], cmap=plt.cm.gray)
+
+    rows = ["MNIST", "Code", "Recon"]
+    cols = ["Class {}".format(row) for row in range(10)]
+
+    for ax, col in zip(axs[0], cols):
+        ax.set_title(col, fontsize=3)
+
+    for ax, row in zip(axs[:, 0], rows):
+        ax.set_ylabel(row, fontsize=3)
+
+    plt.savefig(f"img/whatwhere/{run_name}__recons.png", dpi=300)
 
 
 def plot_examples(D, X_trn, K, k, Q, run_name, set, num_examples=3):
@@ -171,15 +228,13 @@ def plot_sparsity_distribution(codes, k, Q, run_name, set="C"):
     plt.savefig(f"img/whatwhere/{run_name}__sparsityDistribution_{set}.png")
 
 
-def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
+def plot_mnist_codes_activity(mnist, codes, k, Q, run_name):
 
     plt.close()
 
     fig, axs = plt.subplots(2, 1)
-    if set == "C":
-        fig.suptitle("Activity in the MNIST dataset vs Coded Set")
-    else:
-        fig.suptitle("Activity in the MNIST dataset vs Retrieved Set")
+
+    fig.suptitle(f"Sorted activity (1D): MNIST vs Whatwhere\n{run_name}", fontsize=10)
 
     codes = codes.toarray().reshape(-1, k * Q * Q)
     mnist = mnist.reshape(-1, 28 * 28)
@@ -190,7 +245,10 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
     avg_codes = np.sort(np.average(codes, axis=0))
     avg_mnist = np.sort(np.average(mnist, axis=0))
 
-    axs[0].set_title(f"Mnist activity (1D) e={entropy_mnist:.5f}")
+    s_codes = np.count_nonzero(codes != 0) / codes.size
+    s_mnist = np.count_nonzero(mnist != 0) / mnist.size
+
+    axs[0].set_title(f"MNIST s={s_mnist:.3f} e={entropy_mnist:.3f}")
     axs[0].bar(
         np.arange(avg_mnist.shape[0]),
         avg_mnist.flatten(),
@@ -199,10 +257,11 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
         color="Black",
     )
     axs[0].set_ylabel("frequency")
+    axs[0].set_ylabel("pixels")
     axs[0].set_xlim([1, avg_mnist.shape[0]])
     axs[0].set_ylim([0.0, np.max(avg_mnist)])
 
-    axs[1].set_title(f"Whatwhere activity (1D) e={entropy_codes:.5f}")
+    axs[1].set_title(f"Codes s={s_codes:.3f} e={entropy_codes:.3f}")
     axs[1].bar(
         np.arange(avg_codes.shape[0]),
         avg_codes,
@@ -211,12 +270,13 @@ def plot_mnist_codes_activity(mnist, codes, k, Q, run_name, set="C"):
         color="Black",
     )
     axs[1].set_ylabel("frequency")
+    axs[1].set_xlabel("unit")
     axs[1].set_xlim([1, avg_codes.shape[0]])
     axs[1].set_ylim([0.0, np.max(avg_codes)])
 
     fig.tight_layout()
 
-    plt.savefig(f"img/whatwhere/{run_name}__comparisson_{set}.png")
+    plt.savefig(f"img/whatwhere/{run_name}__sparsityEntropy.png")
 
 
 def plot_class_activity_1D(codes, labels, k, Q, run_name, set="C"):
@@ -274,8 +334,10 @@ def plot_class_activity_1D_stacked(codes, labels, k, Q, run_name, set="C"):
         prev = prev + curr
 
     ax.set_ylabel("frequency")
+    ax.set_xlabel("kernel")
     ax.legend()
 
+    fig.set_size_inches(10, 10)
     plt.savefig(f"img/whatwhere/{run_name}__WW_classes_1D_stacked_{set}.png")
 
 
@@ -290,7 +352,10 @@ def plot_class_activity_2D(codes, labels, k, Q, run_name, set="C"):
     overlaped = np.sum(Tr, axis=3)  # make k dim disapear
 
     fig, axs = plt.subplots(2, 5, constrained_layout=True)
-    fig.suptitle(f"Average pixel activity per class ({set} set)", fontsize=16)
+    s = np.average(Tr)
+    fig.suptitle(
+        f"Average pixel activity per class ({set} set)\n s={s:.4f}", fontsize=16
+    )
     for i in range(10):
         avgImg = np.average(overlaped[labels == i], 0)  # average across all samples
         ax = axs[i // 5][i % 5]
@@ -301,3 +366,18 @@ def plot_class_activity_2D(codes, labels, k, Q, run_name, set="C"):
         ax.set_title(f"({i})s={activity:.4f}")
 
     plt.savefig(f"img/whatwhere/{run_name}__WW_classes_2D_{set}.png")
+
+
+def plot_code_pca(codes, lbls, codes_id):
+
+    tsne = TSNE(n_components=2)
+    tsne_results = tsne.fit_transform(codes)
+    fig = px.scatter(
+        tsne_results,
+        x=0,
+        y=1,
+        color=lbls.astype(str),
+        labels={"0": "tsne-2d-one", "1": "tsne-2d-two"},
+        title=codes_id,
+    )
+    fig.write_image(f"img/whatwhere/{codes_id}__PCA.png")

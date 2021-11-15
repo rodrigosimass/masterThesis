@@ -3,16 +3,12 @@ import sys
 import torch
 import torchvision as torchv
 from torch.utils.data import TensorDataset, DataLoader, random_split
-from util.pickleInterface import (
-    load_codes,
-    get_codes_run_name,
-    get_features_run_name,
-    load_features,
-)
+from util.pickleInterface import *
 from util.mnist.tools import *
 from util.pytorch.earlystopping import *
 from util.pytorch.print_log import print_model_info
-from models.deCNN import *
+from util.pytorch.tools import *
+from models.CNN import *
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -22,59 +18,77 @@ if __name__ == "__main__":
 
     """ ---------- PARAMS ---------- """
     # CODES
-    k = 20
+    rng = np.random.RandomState(0)  # reproducible
+    k = 30
     Fs = 2
     n_epochs = 5
     b = 0.8
-    Q = 21
-    T_what = 0.95
-    code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
-
-    # UPSCALE LAYER
-    l1_in_dim = k * Q * Q  # Codes after retinotopic step
-    l1_out_dim = k * 28 * 28  # codes before retinotopic step
+    Q = 18
+    T_what = 0.6
+    wta = True
 
     # early stopping
-    patience = 10
-    delta = 1e-4
+    patience = 5
+    delta = 1e-3
 
     # train
     max_epochs = 100
-    lr = 3e-3
+    lr = 1e-2
 
     # Dataset sizes
     batch_size = 8
-    size = 2000
 
-    trn_n = 6 * size
-    val_n = 2 * size
-    tst_n = 1 * size
+    trn_n = 50000
+    val_n = 10000
+    tst_n = 8000
 
     tst_model = True
-    save_model = True
+    save_model = False
 
-    # CNN params are computes from the WW encoder params
-    init_kernels = False
-    convT_in_ch = k
-    convT_out_ch = 1
-    convT_k_size = 2 * Fs + 1
-    convT_pad = (Fs, Fs)  # for same padding
+    model_name = "CNN" + "_n_" + str(trn_n)
 
-    model_name = "CNN" + "_init_" + str(init_kernels) + "_n_" + str(trn_n)
+    trn_imgs, trn_lbls, tst_imgs, tst_lbls = read_mnist()
 
-    trn_imgs, _, tst_imgs, tst_lbls = read_mnist()
+    features = compute_features(
+        trn_imgs, trn_lbls, k, Fs, rng, n_epochs, b, verbose=True
+    )
+
+    trn_codes, _ = compute_codes(
+        trn_imgs,
+        k,
+        Q,
+        features,
+        T_what,
+        wta,
+        n_epochs,
+        b,
+        Fs,
+        verbose=True,
+        set="trn",
+    )
+    tst_codes, _ = compute_codes(
+        tst_imgs,
+        k,
+        Q,
+        features,
+        T_what,
+        wta,
+        n_epochs,
+        b,
+        Fs,
+        verbose=True,
+        set="tst",
+    )
+
     trn_imgs = trn_imgs[:trn_n].reshape((trn_n, 28 * 28))
     tst_imgs = tst_imgs[:tst_n].reshape((tst_n, 28 * 28))
     tst_lbls = tst_lbls[:tst_n]
 
-    trn_codes, tst_codes = load_codes(code_id)
-    trn_codes = trn_codes[:trn_n].toarray().reshape((-1, k, Q, Q))
-    tst_codes = tst_codes[:tst_n].toarray().reshape((-1, k, Q, Q))
-
-    # create a tensor of the kernels that generated the codes
-    features = load_features(get_features_run_name(k, Fs, n_epochs, b))
     features = torch.from_numpy(features)
     features = torch.unsqueeze(features, dim=1)
+
+    trn_codes = swap_codes_axes(trn_codes[:trn_n], k, Q)  # (-1,Q,Q,K) -> (-1,K,Q,Q)
+    tst_codes = swap_codes_axes(tst_codes[:tst_n], k, Q)  # (-1,Q,Q,K) -> (-1,K,Q,Q)
 
     # create a tensor from the test set for each class (to visualize reconstructions)
     idxs = idxs_1_random_per_class(tst_lbls)
@@ -97,17 +111,14 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Selected device: {device}")
 
-    model = deCNN_MLP(
-        l1_in_dim, l1_out_dim, convT_in_ch, convT_out_ch, convT_k_size, convT_pad
-    ).to(device)
+    model = CNN().to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     loss_function = nn.MSELoss()
 
-    # TODO: maybe init with Kmeans kernels
-    if init_kernels:
-        model.state_dict()["convT1.weight"][:] = features
+    """if init_kernels:
+        model.state_dict()["convT1.weight"][:] = features"""
 
     if USE_WANDB:
         wandb.init(
@@ -120,11 +131,6 @@ if __name__ == "__main__":
                 "ww_b": b,
                 "ww_Q": Q,
                 "ww_Tw": T_what,
-                "convT_in_ch": convT_in_ch,
-                "convT_out_ch": convT_out_ch,
-                "convT_k_size": convT_k_size,
-                "convT_pad": convT_pad,
-                "init_kernels": init_kernels,
                 "ann_lr": lr,
                 "ann_max_epochs": max_epochs,
                 "ann_batch_size": batch_size,
@@ -135,7 +141,7 @@ if __name__ == "__main__":
             },
         )
 
-    print_model_info(model, optimizer, loss_function, verbose=2)
+    print_model_info(model, optimizer, loss_function, verbose=1)
 
     if patience > 0:
         early_stopping = EarlyStopping(
@@ -166,7 +172,7 @@ if __name__ == "__main__":
 
             loss.backward()  # Perform backward pass
             optimizer.step()  # Perform optimization
-        trn_loss = trn_loss / len(trn_loader)  # TODO: chamar isto avg_trn_loss
+        avg_trn_loss = trn_loss / len(trn_loader)
 
         # Validation
         val_loss = 0.0
@@ -180,13 +186,13 @@ if __name__ == "__main__":
                 loss = loss_function(outputs, targets)
                 val_loss += loss.item()
 
-        val_loss = val_loss / len(val_loader)
+        avg_val_loss = val_loss / len(val_loader)
 
-        # print(f"Loss (train) = {trn_loss} ; Loss (validation) = {val_loss}")
+        # print(f"Loss (train) = {avg_trn_loss} ; Loss (validation) = {val_loss}")
 
         # Early Stopping
         if patience > 0:
-            early_stopping(val_loss, model)
+            early_stopping(avg_val_loss, model)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
@@ -194,7 +200,7 @@ if __name__ == "__main__":
         # Log stats
         if USE_WANDB:
 
-            log_dict = {"trn_loss": trn_loss, "val_loss": val_loss}
+            log_dict = {"avg_trn_loss": avg_trn_loss, "avg_val_loss": avg_val_loss}
 
             if epoch == 0:  # one-time logs
                 grid = torchv.utils.make_grid(

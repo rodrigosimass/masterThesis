@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+
 class deCNN_MLP(nn.Module):
     def __init__(
         self,
@@ -35,9 +36,7 @@ class deCNN_MLP(nn.Module):
 
         self.fc3 = nn.Linear(21 * 21, 28 * 28)
         self.act3 = nn.Sigmoid()
-        self.norm3 = nn.BatchNorm1d(28*28)
-        
-
+        self.norm3 = nn.BatchNorm1d(28 * 28)
 
     def forward(self, x0):
 
@@ -46,15 +45,14 @@ class deCNN_MLP(nn.Module):
         x1 = self.act1(x1)
         x1 = self.norm1(x1)
 
-        #x2 = self.convT2(x1)
-        #x2 = self.act2(x2)
-        #x2 = self.norm2(x2)
+        # x2 = self.convT2(x1)
+        # x2 = self.act2(x2)
+        # x2 = self.norm2(x2)
 
         x1 = torch.flatten(x1, start_dim=1)
 
-
         x2 = self.fc3(x1)
         x2 = self.act3(x2)
-        #print("x3:",x3.size())
+        # print("x3:",x3.size())
 
         return x2

@@ -20,16 +20,9 @@ def get_features_run_name(k, Fs, n_epochs, b, classwise):
     )
 
 
-def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta):
+def get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta, classwise=False):
     return (
-        "k"
-        + str(k)
-        + "_Fs"
-        + str(Fs)
-        + "_ep"
-        + str(n_epochs)
-        + "_b"
-        + str(b)
+        get_features_run_name(k, Fs, n_epochs, b, classwise)
         + "_Q"
         + str(Q)
         + "_Tw"
@@ -102,9 +95,20 @@ def compute_features(
 
 
 def compute_codes(
-    imgs, k, Q, features, T_what, wta, n_epochs, b, Fs, verbose=False, set="trn"
+    imgs,
+    k,
+    Q,
+    features,
+    T_what,
+    wta,
+    n_epochs,
+    b,
+    Fs,
+    verbose=False,
+    set="trn",
+    cw=False,
 ):
-    run_name = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta)
+    run_name = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what, wta, cw)
 
     try:
         codes = pickle.load(open(f"pickles/{run_name}__codes_{set}.p", "rb"))

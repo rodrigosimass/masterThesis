@@ -5,9 +5,7 @@ from torch import nn
 class MLP(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim_list):
         super().__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.hidden_dim = hidden_dim_list
+
         current_dim = input_dim
         self.layers = nn.ModuleList()
         for hdim in hidden_dim_list:
@@ -20,12 +18,6 @@ class MLP(nn.Module):
             x = torch.sigmoid(layer(x))
         y = torch.sigmoid(self.layers[-1](x))
         return y
-
-
-
-
-
-
 
 
 class pseudoWN(nn.Module):

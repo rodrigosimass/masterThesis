@@ -12,14 +12,14 @@ from tqdm import trange
 from sklearn.metrics import mean_squared_error
 
 rng = np.random.RandomState(0)  # reproducible
-K = 20  # number of k-means centroids
-Q = 21  # size of the final object space grid
-n_epochs = 5  # for the k means feature detection
-b = 0.8  # minimum activity of the filters: prevents empty feature detection
-wta = True  # winner takes all
+K = 30
+n_epochs = 5
+b = 0.8
+Q = 10
+wta = True
 
-list_Fs = [1, 2, 3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-list_Tw = [0.85, 0.9, 0.95]  # Treshod for keeping or discarding a detected feature
+list_Fs = [2]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
+list_Tw = [0.6]  # Treshod for keeping or discarding a detected feature
 
 
 trn_imgs, trn_lbls, tst_imgs, tst_lbls = read_mnist(n_train=60000)
@@ -96,7 +96,6 @@ for Fs in list_Fs:
             wandb.log(log_dict, step=0)
 
         max_fos = int(codes.shape[0] / codes.shape[1])
-        max_fos = 1
 
         will = None
         for fos in trange(
@@ -145,7 +144,7 @@ for Fs in list_Fs:
                     "err_infoLoss": err_infoLoss,
                     "err_noise": err_noise,
                     "err_avgErr": err_avgErr,
-                    "recon_mse": recon_mse,
+                    # "recon_mse": recon_mse,
                 }
 
                 ex_ret = ret[ex_idxs].toarray()

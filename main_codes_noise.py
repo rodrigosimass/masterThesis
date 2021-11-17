@@ -23,10 +23,8 @@ wta = True
 Fs = 3
 T_what = 0.85
 
-""" list_Pdel = [0, 0.05, 0.1, 0.15]
-list_Padd = [0, 0.0001, 0.005, 0.01] """
-list_Pdel = [0.15]
-list_Padd = [0.01]
+list_Pdel = [0, 0.05, 0.1, 0.15]
+list_Padd = [0, 0.0001, 0.005, 0.01]
 
 
 trn_imgs, trn_lbls, tst_imgs, tst_lbls = read_mnist(n_train=60000)
@@ -114,20 +112,26 @@ for Pdel, Padd in zip(list_Pdel, list_Padd):
         ex_codes_pepper = codes_pepper[ex_idxs].toarray()
 
         ex_recon = recon_img_space(
-            ex_codes, features, polar_params[ex_idxs], Q, K, I, J
+            ex_codes, features, ex_polar_params, Q, K, I, J
+        )
+        ex_recon_salt = recon_img_space(
+            ex_codes_salt, features, ex_polar_params, Q, K, I, J
+        )
+
+        ex_recon_pepper = recon_img_space(
+            ex_codes_pepper, features, ex_polar_params, Q, K, I, J
         )
 
         # 1-time log
         log_dict = {}
         log_dict["MNIST"] = wandb.Image(np_to_grid(ex_img))
         log_dict["Coded Set"] = wandb.Image(code_grid(ex_codes, K, Q))
-        log_dict["Coded Set (Salt)"] = wandb.Image(code_grid(ex_codes_salt, K, Q))
-        log_dict["Coded Set (Pepper)"] = wandb.Image(code_grid(ex_codes_pepper, K, Q))
-        log_dict["Reconstruction"] = wandb.Image(np_to_grid(ex_rec_img))
+        log_dict["Reconstruction"] = wandb.Image(np_to_grid(ex_recon))
+        log_dict["Coded Set (Salt)"] = wandb.Image(np_to_grid(ex_recon_salt))
+        log_dict["Coded Set (Pepper)"] = wandb.Image(np_to_grid(ex_recon_pepper))
         wandb.log(log_dict, step=0)
 
     max_fos = int(codes.shape[0] / codes.shape[1])
-    max_fos = 2
 
     will = None
     for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
@@ -163,8 +167,17 @@ for Pdel, Padd in zip(list_Pdel, list_Padd):
         ret_salt_AS, ret_salt_densest = measure_sparsity(ret_salt)
         ret_pepper_AS, ret_pepper_densest = measure_sparsity(ret_pepper)
         will_S = willshaw_sparsity(will)
-        err_perfRet, err_avgErr, err_infoLoss, err_noise, err_1nn = performance(
+        
+        err_perfRet, err_avgErr, _, _, err_1nn = performance(
             codes, ret, trn_lbls, verbose=False
+        )
+
+        err_salt_perfRet, err_salt_avgErr, _, _, err_salt_1nn = performance(
+            codes_salt, ret, trn_lbls, verbose=False
+        )
+
+        err_pepper_perfRet, err_pepper_avgErr, _, _, err_pepper_1nn = performance(
+            codes_pepper, ret, trn_lbls, verbose=False
         )
 
         if USE_WANDB:
@@ -180,9 +193,13 @@ for Pdel, Padd in zip(list_Pdel, list_Padd):
                 "cod_dist_e": coded_dist_e,
                 "err_1NN": err_1nn,
                 "err_perfRet": err_perfRet,
-                "err_infoLoss": err_infoLoss,
-                "err_noise": err_noise,
                 "err_avgErr": err_avgErr,
+                "err_salt_1NN": err_salt_1nn,
+                "err_salt_perfRet": err_salt_perfRet,
+                "err_salt_avgErr": err_salt_avgErr,
+                "err_pepper_1NN": err_pepper_1nn,
+                "err_pepper_perfRet": err_pepper_perfRet,
+                "err_pepper_avgErr": err_pepper_avgErr,
                 "mse_recon": mse_recon,
                 "mse_recon_salt": mse_recon_salt,
                 "mse_recon_pepper": mse_recon_pepper,
@@ -193,13 +210,13 @@ for Pdel, Padd in zip(list_Pdel, list_Padd):
             ex_ret_pepper = ret_pepper[ex_idxs].toarray()
 
             ex_recon = recon_img_space(
-                ex_ret, features, polar_params[ex_idxs], Q, K, I, J
+                ex_ret, features, ex_polar_params, Q, K, I, J
             )
             ex_recon_salt = recon_img_space(
-                ex_ret_salt, features, polar_params[ex_idxs], Q, K, I, J
+                ex_ret_salt, features, ex_polar_params, Q, K, I, J
             )
             ex_recon_pepper = recon_img_space(
-                ex_ret_pepper, features, polar_params[ex_idxs], Q, K, I, J
+                ex_ret_pepper, features, ex_polar_params, Q, K, I, J
             )
 
             log_dict["Retrieved Set"] = wandb.Image(code_grid(ex_ret, K, Q))

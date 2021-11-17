@@ -270,11 +270,9 @@ def learn_features(trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None):
 
 
 def learn_codes(trn_imgs, k, Q, features, T_what, wta):
-    
+
     codes = np.zeros((trn_imgs.shape[0], k * Q ** 2))
     polar_params = np.zeros((trn_imgs.shape[0], 3))
-
-    idxs_to_remove = []
 
     cnt_a = 0
     cnt_rad = 0
@@ -287,25 +285,21 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
         if s.size != 0:
             cx, cy, rad = compute_polar_params(s)
             if rad != 0:
-                polar_params[i] = np.array([cx,cy,rad])
+                polar_params[i] = np.array([cx, cy, rad])
                 p = polar_transform(s, cx, cy, rad)
                 e = grid_encoding(p, Q, features.shape[0])
                 codes[i] = e.flatten()
             else:
                 cnt_rad += 1
-                idxs_to_remove.append(i)
+                polar_params[i] = np.array([0, 0, 1])
         else:
             cnt_a += 1
-            idxs_to_remove.append(i)
+            polar_params[i] = np.array([0, 0, 1])
 
     if cnt_a + cnt_rad > 0:
         print(
             f"WARNING: {cnt_a} zero activity, and {cnt_rad} zero rad codes were discarded"
         )
-        print(f"before removal: codes.shape={codes.shape}, polar.shape={polar_params.shape}")
-        codes = np.delete(codes, idxs_to_remove, 0)
-        polar_params = np.delete(polar_params, idxs_to_remove, 0)
-        print(f"after removal: codes.shape={codes.shape}, polar.shape={polar_params.shape}")
 
     return csr_matrix(codes), polar_params
 

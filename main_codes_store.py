@@ -149,7 +149,6 @@ for Fs in list_Fs:
 
                 ex_ret = ret[ex_idxs].toarray()
                 ex_rec_img = recon_img_space(ex_ret, features, polar_params[ex_idxs], Q, K, I, J)
-                ex_rec_mem = recon_mem_space(ex_ret, features, Q, K)
 
                 log_dict["Retrieved Set"] = wandb.Image(code_grid(ex_ret, K, Q))
                 log_dict["Reconstruction (I*J)"] = wandb.Image(np_to_grid(ex_rec_img))

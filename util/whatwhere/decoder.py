@@ -19,7 +19,12 @@ def unpack_polar_params(params):
 
 
 # codes (N,Q,Q,K) -> recons(N,I,J) (image space)
-def recon_img_space(codes, polar_params, features, Q, K, I, J):
+def recon_img_space(codes, features, polar_params, Q, K, I, J):
+
+    if codes.shape[0] != polar_params.shape[0]:
+        print("WARNING: codes and polar params have different sizes")
+        exit(0)
+
     recon = np.zeros((codes.shape[0], I, J))
     codes = codes.reshape((-1, Q, Q, K))
     for i in trange(
@@ -118,8 +123,7 @@ def ungrid(a):
 
 
 def unpolar(pol, params):
-    C, rad = params
-    cx, cy = C
+    cx, cy, rad = params
     ret = translation(scale(pol, 1.0 / rad), cx, cy)
     # TODO if rad=0 then return empty array
     return ret

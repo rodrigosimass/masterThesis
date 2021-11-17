@@ -45,4 +45,12 @@ if cw:
 """ plot_features(features, Fs, cw, get_features_run_name(K, Fs, n_epochs, b, cw))
 plot_mnist_codes_activity(trn_imgs, codes, K, Q, codes_id)
 plot_feature_maps(codes, trn_lbls, K, Q, codes_id) """
+
 plot_recon_examples(trn_imgs, trn_lbls, codes, K, Q, codes_id + "new", features, polar)
+
+codes_salt = add_zero_noise(codes, prob=0.2)
+codes_pepper = add_one_noise(codes, prob=0.01)
+plot_recon_examples(trn_imgs, trn_lbls, codes_salt, K, Q, "salt_new", features, polar)
+plot_recon_examples(
+    trn_imgs, trn_lbls, codes_pepper, K, Q, "pepper_new", features, polar
+)

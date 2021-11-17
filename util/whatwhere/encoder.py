@@ -314,11 +314,10 @@ def measure_sparsity(codes, verbose=False):
     return (AS, densest)
 
 
-def code_grid(codes, K, Q, num_examples=10):
-    codes = codes[:num_examples]
-    codes = codes.reshape((num_examples, Q, Q, K))
+def code_grid(codes, K, Q):
+    codes = codes.reshape((-1, Q, Q, K))
     codes = np.sum(codes, axis=3)
-    codes.reshape(num_examples, Q, Q)
+    codes.reshape(-1, Q, Q)
 
     tensor = torch.from_numpy(codes)
     tensor = torch.unsqueeze(tensor, dim=1)

@@ -5,11 +5,11 @@ import random
 import numpy as np
 from ..basic_utils import best_layout, binary_sparsity
 from util.kldiv import *
-from .decoder import recon_mem_space, recon_img_space
+from .decoder import recon_img_space
 from sklearn.metrics import mean_squared_error
 import plotly.express as px
 from sklearn.manifold import TSNE
-from ..mnist.tools import idxs_1_random_per_class
+from ..mnist.tools import idxs_x_random_per_class
 
 rand = 2
 
@@ -119,9 +119,11 @@ def plot_recon_examples(imgs, lbls, codes, k, Q, run_name, features, polar):
 
     plt.close()
 
-    rand_idxs = idxs_1_random_per_class(lbls)
+    rand_idxs = idxs_x_random_per_class(lbls)
+
     imgs = imgs[rand_idxs]
     codes = codes[rand_idxs]
+    polar = np.array(polar)[rand_idxs]
     codes = codes.toarray().reshape(-1, Q, Q, k)
 
     recon_img = recon_img_space(codes, features, polar, Q, k, 28, 28)

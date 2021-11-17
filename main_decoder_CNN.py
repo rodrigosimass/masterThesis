@@ -91,7 +91,7 @@ if __name__ == "__main__":
     tst_codes = swap_codes_axes(tst_codes[:tst_n], k, Q)  # (-1,Q,Q,K) -> (-1,K,Q,Q)
 
     # create a tensor from the test set for each class (to visualize reconstructions)
-    idxs = idxs_1_random_per_class(tst_lbls)
+    idxs = idxs_x_random_per_class(tst_lbls)
     tst_in = torch.from_numpy(tst_codes[idxs])
     tst_target = torch.from_numpy(tst_imgs[idxs])
     tst_target = tst_target.reshape((-1, 28, 28))

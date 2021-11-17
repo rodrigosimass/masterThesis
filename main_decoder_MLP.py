@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from util.pickleInterface import get_codes_run_name, load_codes
-from util.mnist.tools import idxs_1_random_per_class, read_mnist
+from util.mnist.tools import idxs_x_random_per_class, read_mnist
 from torch.utils.data import TensorDataset, DataLoader, random_split
 from util.pytorch.print_log import print_model_info
 import wandb
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     tst_codes = tst_codes[:tst_n].toarray()
 
     # create a tensor from the test set for each class (to visualize reconstructions)
-    idxs = idxs_1_random_per_class(tst_lbls)
+    idxs = idxs_x_random_per_class(tst_lbls)
     tst_in = torch.from_numpy(tst_codes[idxs])
     tst_target = torch.from_numpy(tst_imgs[idxs])
     tst_target = tst_target.reshape((-1, 28, 28))

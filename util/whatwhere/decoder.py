@@ -4,7 +4,6 @@ from sklearn.cluster import MiniBatchKMeans
 from skimage.util import view_as_windows
 import pickle
 from scipy.sparse import csr_matrix
-from .plot import *
 import sys
 import torchvision as torchv
 import torch
@@ -20,7 +19,7 @@ def unpack_polar_params(params):
 
 
 # codes (N,Q,Q,K) -> recons(N,I,J) (image space)
-def recon_img_space(codes, features, polar_params, Q, K, I, J):
+def recon_img_space(codes, polar_params, features, Q, K, I, J):
     recon = np.zeros((codes.shape[0], I, J))
     codes = codes.reshape((-1, Q, Q, K))
     for i in trange(

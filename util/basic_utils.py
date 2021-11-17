@@ -11,3 +11,9 @@ def best_layout(N):
     while N % best != 0:
         best -= 1
     return best, int(N / best)
+
+
+def mse(pred, truth):
+    difference_array = np.subtract(pred, truth)
+    squared_array = np.square(difference_array)
+    return squared_array.mean()

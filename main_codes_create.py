@@ -3,6 +3,7 @@ from util.willshaw.memory import *
 from util.mnist.tools import read_mnist
 from util.pickleInterface import *
 from util.whatwhere.plot import *
+from util.whatwhere.noise import *
 
 rng = np.random.RandomState(0)  # reproducible
 """ Fixed params """
@@ -41,9 +42,7 @@ codes_id = get_codes_run_name(K, Fs, n_epochs, b, Q, T_what, wta, cw)
 if cw:
     codes_id += "cw"
 
-plot_features(features, Fs, cw, get_features_run_name(K, Fs, n_epochs, b, cw))
+""" plot_features(features, Fs, cw, get_features_run_name(K, Fs, n_epochs, b, cw))
 plot_mnist_codes_activity(trn_imgs, codes, K, Q, codes_id)
-plot_feature_maps(codes, trn_lbls, K, Q, codes_id)
-plot_recon_examples(trn_imgs, trn_lbls, codes, K, Q, codes_id, features, polar)
-
-# plot_code_pca(trn_imgs[:1000].reshape(-1,28*28), trn_lbls[:1000], "mnist")
+plot_feature_maps(codes, trn_lbls, K, Q, codes_id) """
+plot_recon_examples(trn_imgs, trn_lbls, codes, K, Q, codes_id + "new", features, polar)

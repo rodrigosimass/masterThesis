@@ -18,14 +18,13 @@ def idxs_last_per_class(lbls):
     return l_idxs
 
 
-def idxs_1_random_per_class(lbls):
-    l_idxs = []
-    for i in range(10):
+def idxs_x_random_per_class(lbls, x=1):
+    idxs = np.zeros((x, 10))
+    for i in range(10):  # class
         class_idxs = np.array(np.where(lbls == i)).flatten()
-        rand_idx = randrange(0, len(class_idxs))
-        class_idx = class_idxs[rand_idx]
-        l_idxs.append(class_idx)
-    return l_idxs
+        rand_idxs = np.random.permutation(class_idxs)[:x]
+        idxs[:, i] = rand_idxs
+    return idxs.flatten().astype(int)
 
 
 def idxs_class_evolution(lbls, lbl, n):

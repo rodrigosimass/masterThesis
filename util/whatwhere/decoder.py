@@ -20,10 +20,8 @@ def unpack_polar_params(params):
 
 # codes (N,Q,Q,K) -> recons(N,I,J) (image space)
 def recon_img_space(codes, features, polar_params, Q, K, I, J):
-
     if codes.shape[0] != polar_params.shape[0]:
-        print("WARNING: codes and polar params have different sizes")
-        exit(0)
+        print(f"WARNING: codes ({codes.shape[0]}) and polar params ({polar_params.shape[0]}) have different sizes")
 
     recon = np.zeros((codes.shape[0], I, J))
     codes = codes.reshape((-1, Q, Q, K))

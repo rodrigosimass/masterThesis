@@ -105,12 +105,13 @@ if USE_WANDB:
     # examples for visualization purposes (trn set)
     ex_idxs = idxs_x_random_per_class(trn_lbls[:code_size], x=3)
     ex_img = trn_imgs[ex_idxs]
-    ex_codes = codes[ex_idxs].toarray()
+    ex_codes = codes[ex_idxs]
     ex_polar_params = polar_params[ex_idxs]
 
     # examples for visualization purposes (tst set)
     tst_ex_idxs = idxs_x_random_per_class(tst_lbls[: tst_codes.shape[0]], x=3)
-    tst_ex_codes = tst_codes[tst_ex_idxs].toarray()
+    tst_ex_img = tst_imgs[tst_ex_idxs]
+    tst_ex_codes = tst_codes[tst_ex_idxs]
     tst_ex_polar_params = tst_polar_params[tst_ex_idxs]
 
     """ reconstruction without memory """
@@ -123,9 +124,12 @@ if USE_WANDB:
     log_dict = {}
     log_dict["MNIST"] = wandb.Image(np_to_grid(ex_img))
     log_dict["Coded Set"] = wandb.Image(code_grid(ex_codes, K, Q))
-    log_dict["Coded Set (tst)"] = wandb.Image(code_grid(tst_ex_codes, K, Q))
     log_dict["Reconstruction"] = wandb.Image(np_to_grid(ex_recon))
+
+    log_dict["MNIST (tst)"] = wandb.Image(np_to_grid(tst_ex_img))
+    log_dict["Coded Set (tst)"] = wandb.Image(code_grid(tst_ex_codes, K, Q))
     log_dict["Reconstruction (tst)"] = wandb.Image(np_to_grid(tst_ex_recon))
+
     wandb.log(log_dict, step=0)
 
 max_fos = int(codes.shape[0] / codes.shape[1])
@@ -155,6 +159,7 @@ for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
 
     """ measure sparseness """
     ret_AS, ret_densest = measure_sparsity(ret)
+    tst_ret_AS, tst_ret_densest = measure_sparsity(tst_ret)
     will_S = willshaw_sparsity(will)
 
     """ measure preformance """
@@ -186,8 +191,8 @@ for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
             "tst_mse_recon": tst_mse_recon,
         }
 
-        ex_ret = ret[ex_idxs].toarray()
-        tst_ex_ret = tst_ret[tst_ex_idxs].toarray()
+        ex_ret = ret[ex_idxs]
+        tst_ex_ret = tst_ret[tst_ex_idxs]
 
         ex_recon = recon_img_space(ex_ret, features, ex_polar_params, Q, K, I, J)
         tst_ex_recon = recon_img_space(
@@ -197,8 +202,9 @@ for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
         log_dict["Retrieved Set"] = wandb.Image(code_grid(ex_ret, K, Q))
         log_dict["Retrieved Set (tst)"] = wandb.Image(code_grid(tst_ex_ret, K, Q))
         log_dict["Reconstruction"] = wandb.Image(np_to_grid(ex_recon))
+        log_dict["Reconstruction (tst)"] = wandb.Image(np_to_grid(tst_ex_recon))
 
         wandb.log(log_dict, step=num_stored)
 
-    if USE_WANDB:
-        wandb.finish()
+if USE_WANDB:
+    wandb.finish()

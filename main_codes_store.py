@@ -18,6 +18,8 @@ n_epochs = 5
 b = 0.8
 wta = True
 
+list_cw = [False, True]
+list_K = [10, 20, 30, 40, 50]
 list_Fs = [3]  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
 list_Tw = [0.85]  # Treshod for keeping or discarding a detected feature
 
@@ -83,13 +85,15 @@ for Fs in list_Fs:
             # 10 examples for visualization purposes
             ex_idxs = idxs_x_random_per_class(trn_lbls[:code_size])
             ex_img = trn_imgs[ex_idxs]
-            ex_cod = codes[ex_idxs].toarray()
+            ex_cod = codes[ex_idxs]
 
             # 1-time log
             log_dict = {}
             log_dict["MNIST"] = wandb.Image(np_to_grid(ex_img))
             log_dict["Coded Set"] = wandb.Image(code_grid(ex_cod, K, Q))
-            ex_rec_img = recon_img_space(ex_cod, features, polar_params[ex_idxs], Q, K, I, J)
+            ex_rec_img = recon_img_space(
+                ex_cod, features, polar_params[ex_idxs], Q, K, I, J
+            )
             ex_rec_mem = recon_mem_space(ex_cod, features, Q, K)
             log_dict["Reconstruction (I*J)"] = wandb.Image(np_to_grid(ex_rec_img))
             log_dict["Reconstruction (Q*Q)"] = wandb.Image(np_to_grid(ex_rec_mem))
@@ -107,7 +111,9 @@ for Fs in list_Fs:
             new_data = codes[num_stored - code_size : num_stored]
             will = incremental_train(new_data, will)
             ret = retreive(codes[:num_stored], will)
-            recons = recon_img_space(ret.toarray(), features, polar_params[:num_stored], Q, K, I, J)
+            recons = recon_img_space(
+                ret.toarray(), features, polar_params[:num_stored], Q, K, I, J
+            )
 
             # measurements
             ret_AS, ret_densest = measure_sparsity(ret)
@@ -147,8 +153,10 @@ for Fs in list_Fs:
                     # "recon_mse": recon_mse,
                 }
 
-                ex_ret = ret[ex_idxs].toarray()
-                ex_rec_img = recon_img_space(ex_ret, features, polar_params[ex_idxs], Q, K, I, J)
+                ex_ret = ret[ex_idxs]
+                ex_rec_img = recon_img_space(
+                    ex_ret, features, polar_params[ex_idxs], Q, K, I, J
+                )
 
                 log_dict["Retrieved Set"] = wandb.Image(code_grid(ex_ret, K, Q))
                 log_dict["Reconstruction (I*J)"] = wandb.Image(np_to_grid(ex_rec_img))

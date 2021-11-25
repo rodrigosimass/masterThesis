@@ -149,11 +149,11 @@ def performance_loss_noise(codes, ret, verbose=False):
     return (loss / total, noise / total)
 
 
-def simple_1NN_classifier(ret, codes, trn_lbls, verbose=False):
-    sim = csr_matrix.dot(ret, codes.T)
+def simple_1NN_classifier(cues, truth, trn_lbls, verbose=False):
+    sim = csr_matrix.dot(cues, truth.T)
     nn = csr_matrix.argmax(sim, axis=1)
 
-    num_stored = ret.shape[0]
+    num_stored = cues.shape[0]
 
     prediction = trn_lbls[nn]
     solution = trn_lbls[:num_stored]

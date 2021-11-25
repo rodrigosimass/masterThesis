@@ -305,6 +305,14 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
 
 
 def measure_sparsity(codes, verbose=False):
+    """
+    Measures sparsity of a binary csr_matrix
+
+    @param codes: csr matrix with the sparce codes (N*Q*Q*K)
+
+    @return AS: average sparsity of the set
+    @return densest: sparsity of pattern with the most activity
+    """
     AS = len(codes.nonzero()) / (codes.shape[0] * codes.shape[1])
     densest = np.max(csr_matrix.sum(codes, axis=1)) / codes.shape[1]
 
@@ -315,7 +323,16 @@ def measure_sparsity(codes, verbose=False):
 
 
 def code_grid(codes, K, Q):
-    codes = codes.reshape((-1, Q, Q, K))
+    """
+    Creates a grid of codes for visualization purposes
+
+    @param codes: csr matrix with the sparce codes (N*Q*Q*K)
+    @param K: num visual features
+    @param Q: size of the polar coordinate grid
+
+    @return grid: grid of codes for visualization purposes
+    """
+    codes = codes.toarray().reshape((-1, Q, Q, K))
     codes = np.sum(codes, axis=3)
     codes.reshape(-1, Q, Q)
 

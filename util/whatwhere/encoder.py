@@ -313,7 +313,7 @@ def measure_sparsity(codes, verbose=False):
     @return AS: average sparsity of the set
     @return densest: sparsity of pattern with the most activity
     """
-    AS = len(codes.nonzero()) / (codes.shape[0] * codes.shape[1])
+    AS = codes.nnz / (codes.shape[0] * codes.shape[1])
     densest = np.max(csr_matrix.sum(codes, axis=1)) / codes.shape[1]
 
     if verbose:

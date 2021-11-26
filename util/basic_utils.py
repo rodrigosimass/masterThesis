@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import math
 import torch
@@ -22,12 +23,43 @@ def mse(pred, truth):
     return squared_array.mean()
 
 
+def mse_detailed(pred, truth):
+    """
+    Measures the negative and positive squared error.
+    In order to convert the result of this function to MSE do:
+    (n+p)/(28*28) (input: 28 by 28 images)
+
+    @param pred: flattened np array with the prediction
+    @param truth: flattened np array with the ground truth
+
+    @return neg: squared error due to extra info
+    @return pos: squared error due to lost info
+    """
+    num_patterns = truth.shape[0]
+    pred = pred.reshape(num_patterns, -1)
+    truth = truth.reshape(num_patterns, -1)
+
+    pattern_size = truth.shape[1]
+
+    diff = np.subtract(truth, pred)
+
+    neg = np.square(diff[diff < 0])
+    pos = np.square(diff[diff >= 0])
+
+    neg = neg.sum() / num_patterns if neg.size != 0 else 0
+    pos = pos.sum() / num_patterns if pos.size != 0 else 0
+
+    mse = (neg + pos) / pattern_size
+
+    return (neg, pos, mse)
+
+
 def mse_torch(pred, truth):
     """
     Measures the Mean squared error between two arrays
 
-    @param pred: np array with the prediction
-    @param truth: np array with the ground truth
+    @param pred: flattened np array with the prediction
+    @param truth: flattened np array with the ground truth
 
     @return mse: mean swared error between pred and truth
     """
@@ -36,27 +68,8 @@ def mse_torch(pred, truth):
     mse = nn.MSELoss()
 
     loss = mse(pred.float(), truth.float())
-
+    # TODO:
     return loss.item()
 
 
-if __name__ == "__main__":
-
-    x = np.arange(10)
-    y = np.arange(10) + 1
-
-    print(mse(x, y))
-    print(mse_torch(x,y))
-
-    a = np.random.rand(600000, 28, 28)
-    b = np.random.rand(600000, 28, 28)
-
-    start = time.time()
-    print(mse(a, b))
-    end = time.time()
-    print(f"Regualr MSE done in {end-start:.2f}")
-
-    start = time.time()
-    print(mse_torch(a, b))
-    end = time.time()
-    print(f"Torch MSE done in {end-start:.2f}")
+# %%

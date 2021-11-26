@@ -10,12 +10,14 @@ from util.willshaw.memory import *
 from util.willshaw.plot import *
 from util.pytorch.tools import np_to_grid
 from util.kldiv import *
-from util.basic_utils import mse_torch
+from util.basic_utils import mse_detailed
+
 
 if len(sys.argv) < 2:
     print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
+
 
 """ Code generation parameters """
 rng = np.random.RandomState(0)  # reproducible
@@ -28,14 +30,7 @@ Fs = 2
 T_what = 0.95
 
 trial_run = False
-list_Pdel = [
-    0.0,
-    0.6,
-    0.7,
-    0.8,
-    0.9,
-    1.0,
-]  # each item in this list is a different wandb run
+list_Pdel = [0, 0.05, 0.1, 0.15]  # each item in this list is a different wandb run
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)
@@ -58,7 +53,6 @@ codes, polar_params = compute_codes(
 )
 
 code_size = codes.shape[1]
-
 if trial_run:
     # Reduce the size of the datasets for debugging
     imgs = imgs[: code_size * 2]
@@ -93,7 +87,7 @@ for Pdel in list_Pdel:
         )
 
         name = "TRIAL_" if trial_run else ""
-        wandb.run.name = name + "salt_" + "Pdel" + str(Pdel)
+        wandb.run.name = name + "neg_pos_mse" + "Pdel" + str(Pdel)
         print(get_codes_run_name(K, Fs, n_epochs, b, Q, T_what, wta))
 
         """ log the initial state (no memory) """
@@ -103,11 +97,15 @@ for Pdel in list_Pdel:
 
         # reconstructions
         recons = recon_img_space(codes, features, polar_params, Q, K, I, J)
-        mse_recon = mse_torch(recons, imgs)
+        nse, pse, mse = mse_detailed(recons, imgs)
         recons_salt = recon_img_space(codes_salt, features, polar_params, Q, K, I, J)
-        mse_recon_salt = mse_torch(recons_salt, imgs)
-        log_dict["mse_recon"] = mse_recon
-        log_dict["mse_recon_salt"] = mse_recon_salt
+        nse_salt, pse_salt, mse_salt = mse_detailed(recons_salt, imgs)
+        log_dict["mse"] = mse
+        log_dict["nse"] = nse
+        log_dict["pse"] = pse
+        log_dict["mse_salt"] = mse_salt
+        log_dict["nse_salt"] = nse_salt
+        log_dict["pse_salt"] = pse_salt
 
         """ examples for visualization purposes """
         ex_idxs = idxs_x_random_per_class(lbls[:code_size], x=3)
@@ -144,8 +142,8 @@ for Pdel in list_Pdel:
         recons_salt = recon_img_space(ret_salt, features, polar_params, Q, K, I, J)
 
         """ measure reconstruction MSE """
-        mse_recon = mse_torch(imgs[:num_stored].flatten(), recons.flatten())
-        mse_recon_salt = mse_torch(imgs.flatten(), recons_salt.flatten())
+        nse, pse, mse = mse_detailed(imgs[:num_stored], recons)
+        nse_salt, pse_salt, mse_salt = mse_detailed(imgs, recons_salt)
 
         """ measure preformance """
         err_perfRet, err_avgErr, err_loss, err_noise, err_1nn = performance(
@@ -166,8 +164,12 @@ for Pdel in list_Pdel:
                 "err_avgErr": err_avgErr,
                 "err_salt_1NN": err_salt_1nn,
                 "err_salt_avgErr": err_salt_avgErr,
-                "mse_recon": mse_recon,
-                "mse_recon_salt": mse_recon_salt,
+                "mse": mse,
+                "nse": nse,
+                "pse": pse,
+                "mse_salt": mse_salt,
+                "nse_salt": nse_salt,
+                "pse_salt": pse_salt,
             }
 
             """ log images """

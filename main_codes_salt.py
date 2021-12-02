@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import wandb
 from tqdm import trange
@@ -5,19 +6,21 @@ from util.mnist.tools import *
 from util.pickleInterface import *
 from util.whatwhere.encoder import *
 from util.whatwhere.decoder import *
-from util.whatwhere.noise import add_zero_noise
+from util.whatwhere.noise import *
 from util.willshaw.memory import *
 from util.willshaw.plot import *
 from util.pytorch.tools import np_to_grid
 from util.kldiv import *
 from util.basic_utils import mse_detailed
 
+#%%
 
 if len(sys.argv) < 2:
     print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
 
+#%%
 
 """ Code generation parameters """
 rng = np.random.RandomState(0)  # reproducible
@@ -51,6 +54,8 @@ codes, polar_params = compute_codes(
     Fs,
     verbose=False,
 )
+
+#%%
 
 code_size = codes.shape[1]
 if trial_run:

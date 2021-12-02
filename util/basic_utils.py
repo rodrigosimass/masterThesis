@@ -3,8 +3,6 @@ import numpy as np
 import math
 import torch
 from torch import nn
-import time
-
 
 def binary_sparsity(X):
     return np.count_nonzero(X) / X.size
@@ -46,10 +44,10 @@ def mse_detailed(pred, truth):
     neg = np.square(diff[diff < 0])
     pos = np.square(diff[diff >= 0])
 
-    neg = neg.sum() / num_patterns if neg.size != 0 else 0
-    pos = pos.sum() / num_patterns if pos.size != 0 else 0
+    neg = neg.sum() / (num_patterns * pattern_size) if neg.size != 0 else 0
+    pos = pos.sum() / (num_patterns * pattern_size) if pos.size != 0 else 0
 
-    mse = (neg + pos) / pattern_size
+    mse = neg + pos
 
     return (neg, pos, mse)
 

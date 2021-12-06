@@ -19,7 +19,12 @@ def unpack_polar_params(params):
 
 
 # codes (N,Q,Q,K) -> recons(N,I,J) (image space)
-def recon_img_space(codes, features, polar_params, Q, K, I, J):
+def recon_img_space(codes, features, polar_params, Q, K, I=28, J=28):
+
+    if polar_params == None:
+        default = np.array([[0, 0, 1]])  # default is center at (0,0) and radius 1
+        polar_params = np.repeat(default, repeats=codes.shape[0], axis=0)
+
     codes = codes.toarray()
     if codes.shape[0] != polar_params.shape[0]:
         print(

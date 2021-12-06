@@ -2,6 +2,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+from util.basic_utils import best_layout
+
 
 def plot_dists(l_dists, l_d, l_kl, l_e):
 
@@ -36,3 +38,15 @@ def plot_dists(l_dists, l_d, l_kl, l_e):
     fig.set_size_inches(30, 10)
     plt.tight_layout()
     plt.savefig(f"img/kldiv/dists.png")
+
+
+def multiple_imshow(imgs, title=None, m=0, M=1):
+    num_imgs = imgs.shape[0]
+    fig, axs = plt.subplots(1, num_imgs)
+    if title:
+        fig.suptitle(title)
+
+    for i in range(num_imgs):
+        axs[i].imshow(imgs[i], vmin=m, vmax=M, cmap=plt.cm.gray)
+        axs[i].set_xticks([])
+        axs[i].set_yticks([])

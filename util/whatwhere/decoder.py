@@ -19,11 +19,31 @@ def unpack_polar_params(params):
 
 
 # codes (N,Q,Q,K) -> recons(N,I,J) (image space)
-def recon_img_space(codes, features, polar_params, Q, K, I=28, J=28):
+def recon_with_polar(codes, features, polar_params, Q, K, I=28, J=28):
 
-    if polar_params == None:
-        default = np.array([[0, 0, 1]])  # default is center at (0,0) and radius 1
-        polar_params = np.repeat(default, repeats=codes.shape[0], axis=0)
+    codes = codes.toarray()
+    if codes.shape[0] != polar_params.shape[0]:
+        print(
+            f"WARNING: codes ({codes.shape[0]}) and polar params ({polar_params.shape[0]}) have different sizes"
+        )
+
+    recon = np.zeros((codes.shape[0], I, J))
+    codes = codes.reshape((-1, Q, Q, K))
+    for i in trange(
+        codes.shape[0], desc="reconstructing", unit="datasamples", leave=False
+    ):
+        params = polar_params[i]
+        pol = ungrid(codes[i])
+        ret = unpolar(pol, params)
+        h = unenum(ret, I, J, K)
+        recon[i] = reconstruct(h, features)
+    return recon
+
+
+def recon_no_polar(codes, features, Q, K, I=28, J=28):
+
+    default = np.array([[0, 0, 1]])  # default is center at (0,0) and radius 1
+    polar_params = np.repeat(default, repeats=codes.shape[0], axis=0)
 
     codes = codes.toarray()
     if codes.shape[0] != polar_params.shape[0]:

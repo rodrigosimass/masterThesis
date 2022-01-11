@@ -40,13 +40,15 @@ def plot_dists(l_dists, l_d, l_kl, l_e):
     plt.savefig(f"img/kldiv/dists.png")
 
 
-def multiple_imshow(imgs, title=None, m=0, M=1):
+def multiple_imshow(imgs, layout=None, title=None, m=0, M=1):
     num_imgs = imgs.shape[0]
-    fig, axs = plt.subplots(1, num_imgs)
+    if layout == None:
+        layout = best_layout(num_imgs)
+    fig, _ = plt.subplots(layout[0], layout[1])
     if title:
         fig.suptitle(title)
 
-    for i in range(num_imgs):
-        axs[i].imshow(imgs[i], vmin=m, vmax=M, cmap=plt.cm.gray)
-        axs[i].set_xticks([])
-        axs[i].set_yticks([])
+    for i, ax in enumerate(fig.axes):
+        ax.imshow(imgs[i], vmin=m, vmax=M, cmap=plt.cm.gray)
+        ax.set_xticks([])
+        ax.set_yticks([])

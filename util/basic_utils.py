@@ -4,6 +4,7 @@ import math
 import torch
 from torch import nn
 
+
 def binary_sparsity(X):
     return np.count_nonzero(X) / X.size
 
@@ -30,8 +31,9 @@ def mse_detailed(pred, truth):
     @param pred: flattened np array with the prediction
     @param truth: flattened np array with the ground truth
 
-    @return neg: squared error due to extra info
-    @return pos: squared error due to lost info
+    @return extra: negative squared error
+    @return lost: positive swuared error
+    @return mse: mean squared error
     """
     num_patterns = truth.shape[0]
     pred = pred.reshape(num_patterns, -1)
@@ -41,15 +43,15 @@ def mse_detailed(pred, truth):
 
     diff = np.subtract(truth, pred)
 
-    neg = np.square(diff[diff < 0])
-    pos = np.square(diff[diff >= 0])
+    extra = np.square(diff[diff < 0])  # neg
+    lost = np.square(diff[diff >= 0])  # pos
 
-    neg = neg.sum() / (num_patterns * pattern_size) if neg.size != 0 else 0
-    pos = pos.sum() / (num_patterns * pattern_size) if pos.size != 0 else 0
+    extra = extra.sum() / (num_patterns * pattern_size) if extra.size != 0 else 0
+    lost = lost.sum() / (num_patterns * pattern_size) if lost.size != 0 else 0
 
-    mse = neg + pos
+    mse = extra + lost
 
-    return (neg, pos, mse)
+    return (extra, lost, mse)
 
 
 def mse_torch(pred, truth):

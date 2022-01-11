@@ -5,7 +5,7 @@ import random
 import numpy as np
 from ..basic_utils import best_layout, binary_sparsity
 from util.kldiv import *
-from .decoder import recon_img_space
+from .decoder import recon_with_polar
 from sklearn.metrics import mean_squared_error
 import plotly.express as px
 from sklearn.manifold import TSNE
@@ -14,7 +14,7 @@ from ..mnist.tools import idxs_x_random_per_class
 rand = 2
 
 
-def plot_features(W, Fs, cw, run_name):
+def plot_features(W, Fs, cw=False, run_name=""):
 
     plt.close()
 
@@ -126,7 +126,7 @@ def plot_recon_examples(imgs, lbls, codes, k, Q, run_name, features, polar):
     polar = np.array(polar)[rand_idxs]
     codes = codes.toarray().reshape(-1, Q, Q, k)
 
-    recon_img = recon_img_space(codes, features, polar, Q, k, 28, 28)
+    recon_img = recon_with_polar(codes, features, polar, Q, k, 28, 28)
     combined = np.sum(codes, axis=3)
 
     fig, axs = plt.subplots(3, 10, constrained_layout=True)

@@ -317,9 +317,13 @@ def measure_sparsity(codes, verbose=False):
     densest = np.max(csr_matrix.sum(codes, axis=1)) / codes.shape[1]
 
     if verbose:
-        print(f"Coded training set:\navg sparsity = {AS}\ndensest (%B) = {densest}")
+        print(f"avg sparsity = {AS}\ndensest (%B) = {densest}")
 
     return (AS, densest)
+
+def np_sparsity(arr):
+    arr = arr.flatten()
+    return  len(arr[arr!=0]) / len(arr)
 
 
 def code_grid(codes, K, Q):

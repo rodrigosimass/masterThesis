@@ -1,177 +1,226 @@
+#%%
 import numpy as np
-from scipy.sparse import csr_matrix, vstack
-from .plot import *
-from tqdm import tqdm
+from scipy.sparse import csr_matrix
 from tqdm import trange
 
 
-def train(codes_csr, num_stored, verbose=False):
-
-    n = codes_csr.shape[1]  # size of patterns to Memorize
-    if verbose:
-        print("codes_set shape: ", codes_csr.shape)
-        print("training willshaw of size ", n, "*", n)
-
-    addresses = codes_csr[:num_stored]
-    will = np.zeros((n, n))
-
-    for a in addresses:  # for each pattern to store in will
-        num_nz = len(a.indices)
-        for i in range(num_nz):
-            # nz has the indexes of x that are non-zero
-            for j in range(i, num_nz):
-                idx_i = a.indices[i]
-                idx_j = a.indices[j]
-                will[idx_i, idx_j] = 1
-                will[idx_j, idx_i] = 1
-
-    return csr_matrix(will)
-
-
-def incremental_train(new_data, current_W=None):
-
-    if current_W == None:
-        n = new_data.shape[1]  # size of patterns to Memorize
-        will = np.zeros((n, n))
-    else:
-        will = current_W.toarray()
-    for i in trange(new_data.shape[0], desc="Updating willshaw", leave=False):
-        pattern = new_data[i]
-        num_nz = len(pattern.indices)
-        for i in range(num_nz):
-            # nz has the indexes of x that are non-zero
-            for j in range(i, num_nz):
-                idx_i = pattern.indices[i]
-                idx_j = pattern.indices[j]
-                will[idx_i, idx_j] = 1
-                will[idx_j, idx_i] = 1
-
-    will = csr_matrix(will)
-
-    return will
-
-
-def willshaw_sparsity(will):
-    return will.nnz / (will.shape[0] * will.shape[1])
-
-
 def H(vec):
+    """
+    Applies the heaviside function to a vector.
+    @param vec: np array
+    @return vec: np array (binary)
+    """
     vec[vec >= 0] = 1
     vec[vec < 0] = 0
     return vec
 
 
-def incremental_retreive(new_cues, W, prev_ret):
+class AAWN:
+    """
+    Binary Willshaw Network for Auto-Association of binary patterns
+    Atributes:
+        n          : number of neurons
+        W          : weight matrix (n*n csr_matrix)
+        num_stored : number of stored pattenrs
+    """
 
-    ret = np.zeros(new_cues.shape)
+    def __init__(self, n):
+        self.n = n  # number of neurons
+        self.W = None  # csr_matrix weight matrix
+        self.num_stored = 0  # num of stored pattens
 
-    s = csr_matrix.dot(new_cues, W)
-
-    for i in range(new_cues.shape[0]):  # for all retreival cues
-        aux = s[i].toarray()
-        m = np.max(aux)
-        if m != 0:
-            aux1 = aux - m
-            ret[i] = H(aux1)
+    def sparsity(self):
+        """
+        Computes the sparsity of the weight matrix
+        @returns s: sparsity
+        """
+        if self.W != None:
+            return self.W.nnz / (self.n * self.n)
         else:
-            # zero activations
-            ret[i] = 0
+            print("EMPTY memory!")
+            return 0.0
 
+    def store(self, patterns):
+        """
+        Stores patterns in the memory
+        @param pattenrs: 2D-np array (num patterns * size of patterns)
+        """
+        if self.W == None:
+            weights = np.zeros((self.n, self.n))
+        else:
+            weights = self.W.toarray()
+
+        for i in trange(patterns.shape[0], desc="Storing", leave=False):
+            pattern = patterns[i]
+            num_nz = len(pattern.indices)
+            for i in range(num_nz):
+                for j in range(i, num_nz):
+                    idx_i = pattern.indices[i]
+                    idx_j = pattern.indices[j]
+                    weights[idx_i, idx_j] = 1
+                    weights[idx_j, idx_i] = 1
+
+        self.W = csr_matrix(weights)
+        self.num_stored += patterns.shape[0]
+
+    def retrieve(self, cues):
+        """
+        Retrives cues with soft-thresholding (Palm et al.)
+        @param cues: 2D csr_matrix, pattern size must match self.n
+        @return ret: 2D csr_matrix with the same shape as cues
+        """
+        ret = np.zeros(cues.shape)
+
+        s = csr_matrix.dot(cues, self.W)  # dentritic potential
+
+        for i in trange(cues.shape[0], desc="Retrieving", leave=False):
+            aux = s[i].toarray()
+            m = np.max(aux)
+            if m != 0:
+                aux = aux - m
+                ret[i] = H(aux)
+            else:
+                ret[i] = 0
+
+        return csr_matrix(ret)
+
+    def forget(self):
+        """
+        Reset the memory
+        """
+        self.W = None
+        self.nnz = 0
+        self.s = 0.0
+        self.num_stored = 0
+
+
+""" ------------------------------------------------------------ """
+""" ------------------- Evaluation functions ------------------- """
+""" ------------------------------------------------------------ """
+
+
+def perfect_retrieval_error(codes, ret):
+    """
+    Computes the Perfect retrieval error
+    @param codes: 2D csr_matrix with original codes
+    @param ret: 2D csr_matrix with memory output
+    @return err: perfect retrievals / num codes
+    """
+    codes = csr_matrix(codes)
     ret = csr_matrix(ret)
 
-    AS = ret.nnz / (ret.shape[0] * ret.shape[1])
-    densest = np.max(csr_matrix.sum(ret, axis=1)) / ret.shape[1]
-
-    if prev_ret != None:
-        ret = vstack((prev_ret, ret))
-
-    return ret, AS, densest
-
-
-def retreive(codes, W):
-
-    ret = np.zeros(codes.shape)
-    s = csr_matrix.dot(codes, W)
-
-    for i in trange(
-        codes.shape[0], desc="Computing Retrieval Set", unit="datasample", leave=False
-    ):
-        aux = s[i].toarray()
-        m = np.max(aux)
-        if m != 0:
-            aux1 = aux - m
-            ret[i] = H(aux1)
-        else:
-            # zero activations
-            ret[i] = 0
-
-    return csr_matrix(ret)
-
-
-def performance_perfect_ret(codes, ret, verbose=False):
-    hit = 0
     miss = 0
     for i in range(ret.shape[0]):
         if (codes[i] != ret[i]).nnz != 0:
             miss += 1
-        else:
-            hit += 1
-    if verbose:
-        print(f"Perfection Performance: {hit}/{hit+miss}")
-    return miss / (hit + miss)
+
+    err = miss / ret.shape[0]
+
+    return err
 
 
-def performance_avg_error(codes, ret, verbose=False):
-    errors = 0
-    for i in range(ret.shape[0]):
-        errors += np.sum(codes[i] != ret[i])
+def hamming_distance_detailed(codes, ret):
+    """
+    Negative&Positive version of hamming distance.
+    Computes the hamming distance from extra bits (0s that become 1s),
+    and from lost bits (1s that become 0s)
+    @param codes: 2D csr_matrix with original codes
+    @param ret: 2D csr_matrix with memory output
+    @return err_extra: hamm dist from extra bits
+    @return err_lost: hamm dist from lost bits
+    @return hamm_dist: total hamming distance
+    """
+    diff = (codes - ret).toarray()
 
-    avg_error = errors / (ret.shape[0] * ret.shape[1])
-    if verbose:
-        print(f"Avg Error: {avg_error }")
+    extra_bits = np.count_nonzero(diff == -1)
+    lost_bits = np.count_nonzero(diff == 1)
 
-    return avg_error
+    total_bits = ret.shape[0] * ret.shape[1]
 
+    hamm_dist = (extra_bits + lost_bits) / total_bits
 
-def performance_loss_noise(codes, ret, verbose=False):
-    loss = 0
-    noise = 0
-    for i in range(ret.shape[0]):
-        diff = (codes[i] - ret[i]).toarray()
-        loss += np.count_nonzero(diff == 1)
-        noise += np.count_nonzero(diff == -1)
-
-    total = ret.shape[0] * ret.shape[1]
-
-    if verbose:
-        print(f"Information loss: {loss} ; Added nosie: { noise}")
-
-    return (loss / total, noise / total)
+    return (extra_bits / total_bits, lost_bits / total_bits, hamm_dist)
 
 
-def simple_1NN_classifier(cues, truth, trn_lbls, verbose=False):
-    sim = csr_matrix.dot(cues, truth.T)
+def err_1NNclassifier(trn, trn_lbls, tst, tst_lbls):
+    """
+    Computes the classification error of a simple 1NN dot product classifier (Sa-Couto 2020).
+    @param trn: 2D csr_matrix with trn (ret set)
+    @param trn_lbls: np array with true labels
+    @param tst: 2D csr_matrix with tst (coded set)
+    @param tst_lbls: np array with labels of tst
+    @tsturn err: classification error
+    """
+    # (n_tst*size).(n_trn*size).T = (n_tst*n_trn) similarity
+    sim = csr_matrix.dot(tst, trn.T)
+    # for each tst example, which is the nearest trn example
     nn = csr_matrix.argmax(sim, axis=1)
 
-    num_stored = cues.shape[0]
+    truth = tst_lbls.flatten()  # true label of the tst patterns
+    prediction = trn_lbls[nn].flatten()  # label of the most similar neighbour
 
-    prediction = trn_lbls[nn]
-    solution = trn_lbls[:num_stored]
-    diff = prediction.flatten() - solution.flatten()
+    diff = prediction - truth
+    err = np.count_nonzero(diff) / tst.shape[0]
 
-    errors = np.count_nonzero(diff)
-    error_rate = errors / num_stored
-
-    if verbose:
-        print(
-            f"1NN accuracy = {diff.shape[0] - errors}/{diff.shape[0]} ; Error rate: {error_rate}"
-        )
-    return error_rate
+    return err
 
 
-def performance(codes, ret, trn_lbls, verbose=False):
-    err_avg = performance_avg_error(codes, ret, verbose)
-    err_loss, err_noise = performance_loss_noise(codes, ret, verbose)
-    err_perf = performance_perfect_ret(codes, ret, verbose)
-    err_1nn = simple_1NN_classifier(ret, codes, trn_lbls, verbose)
-    return (err_perf, err_avg, err_loss, err_noise, err_1nn)
+def eval(codes, codes_lbls, ret, ret_lbls):
+    """
+    Calls all the evaluation functions at once
+    @param codes: 2D csr_matrix with coded set (classifier tst set)
+    @param codes_lbls: np array with labels of the coded set
+    @param ret: 2D csr_matrix with ret set (classifier trn set)
+    @param ret_lbls: np array with true labels
+    @return pre: perfect retrieval error
+    @return hd_extra: hamming distance from extra bits
+    @return hd_lost: hamming distance from lost bits
+    @return hd: total hamming distance
+    @return err_1nn: classification error of 1NN classifier
+    """
+    pre = perfect_retrieval_error(codes, ret)
+    hd_extra, hd_lost, hd = hamming_distance_detailed(codes, ret)
+    err_1nn = err_1NNclassifier(codes, codes_lbls, ret, ret_lbls)
+
+    return pre, hd_extra, hd_lost, hd, err_1nn
+
+
+#%%
+
+if __name__ == "__main__":
+
+    right = np.array([0, 0, 1, 1])
+    left = np.array([1, 1, 0, 0])
+    dataset = csr_matrix(np.vstack((right, left)))
+
+    print("Dataset:\n", dataset.toarray())
+    num_patterns = dataset.shape[0]
+    pattern_size = dataset.shape[1]
+
+    wn = AAWN(pattern_size)
+    wn.store(dataset)
+
+    print(f"Memory has {wn.num_stored} stored patterns.")
+    print("Weight matrix:\n", wn.W.toarray())
+    print(f"Sparsity of W = {wn.sparsity()}")
+
+    right_noisy = np.array([1, 0, 1, 1])
+    left_noisy = np.array([1, 0, 0, 0])
+    cues = csr_matrix(np.vstack((right_noisy, left_noisy)))
+
+    print("Cues (before memory):\n", cues.toarray())
+    ret = wn.retrieve(cues)
+    print("Retrieved (after memory):\n", ret.toarray())
+
+    prr = perfect_retrieval_error(dataset, ret)
+    print(f"Perfect retrieval error: {prr}")
+
+    hd_extra, hd_lost, hd = hamming_distance_detailed(dataset, ret)
+
+    print(
+        f"Hamming Distance (Extra): {hd_extra} + Hamming Distance (Lost): {hd_lost} = Hamming Distance: {hd}"
+    )
+
+    print("Forgeting...")
+    wn.forget()
+    print(f"Memory has {wn.num_stored} stored patterns.")

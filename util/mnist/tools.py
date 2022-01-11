@@ -18,8 +18,12 @@ def idxs_last_per_class(lbls):
     return l_idxs
 
 
-def idxs_x_random_per_class(lbls, x=1):
+def idxs_x_random_per_class(lbls, x=1, seed=False):
     idxs = np.zeros((x, 10))
+
+    if seed:
+        np.random.seed(0)
+
     for i in range(10):  # class
         class_idxs = np.array(np.where(lbls == i)).flatten()
         rand_idxs = np.random.permutation(class_idxs)[:x]

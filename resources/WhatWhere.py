@@ -13,7 +13,7 @@ class RetLayer:
         self,
         K,
         f,  # size of window is (f*f)
-        T_what,
+        Tw,
         T_pixel=1.2,  # background
         COSINE=True,  # mode of similatiry
         RNG=42,
@@ -29,7 +29,7 @@ class RetLayer:
         self.MAX_ITER = MAX_ITER
         self.N_INIT = N_INIT
         self.T_pixel = T_pixel
-        self.T_what = T_what
+        self.Tw = Tw
         self.COSINE = COSINE
 
     def fit(self, x):
@@ -79,7 +79,7 @@ class RetLayer:
         s = self.similarity(x)
         y = s.argmax(axis=-1) + 1
         s = s.max(axis=-1)
-        y[s <= self.T_what] = 0
+        y[s <= self.Tw] = 0
         y = y.reshape(x.shape)
         y_blow = np.eye(self.K + 1)[y][:, :, :, 1:]
         return y_blow
@@ -194,7 +194,7 @@ class sparseWWencoder:
         self,
         K,
         f,
-        T_what,
+        Tw,
         Q,
         T_pixel=1.2,
         COSINE=True,
@@ -205,7 +205,7 @@ class sparseWWencoder:
     ):
         self.K = K
         self.f = f
-        self.T_what = T_what
+        self.Tw = Tw
         self.Q = Q
         self.T_pixel = T_pixel
         self.COSINE = COSINE
@@ -216,7 +216,7 @@ class sparseWWencoder:
         self.retlayer = RetLayer(
             K,
             f,
-            T_what,
+            Tw,
             T_pixel=T_pixel,
             COSINE=COSINE,
             RNG=RNG,
@@ -248,7 +248,7 @@ class AttentionMatcher:
         self,
         K,
         f,
-        T_what,
+        Tw,
         T_where,
         Q,
         T_pixel=1.2,
@@ -263,7 +263,7 @@ class AttentionMatcher:
         self.encoder = sparseWWencoder(
             K,
             f,
-            T_what,
+            Tw,
             Q,
             T_pixel=T_pixel,
             COSINE=COSINE,

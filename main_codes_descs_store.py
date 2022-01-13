@@ -38,7 +38,7 @@ if len(sys.argv) < 2:
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
 
-for T_what in list_Tw:
+for Tw in list_Tw:
     for Fs in list_Fs:
         features = compute_features(trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b)
 
@@ -47,7 +47,7 @@ for T_what in list_Tw:
             K,
             Q,
             features,
-            T_what,
+            Tw,
             wta,
             n_epochs,
             b,
@@ -60,7 +60,7 @@ for T_what in list_Tw:
             K,
             Q,
             features,
-            T_what,
+            Tw,
             wta,
             n_epochs,
             b,
@@ -99,7 +99,7 @@ for T_what in list_Tw:
                     "km_b": b,
                     "km_Fs": Fs,
                     "ww_Q": Q,
-                    "ww_Twhat": T_what,
+                    "ww_Twhat": Tw,
                     "codes_AS": coded_AS,
                     "codes_%B": coded_densest,
                     "interval_size": x,

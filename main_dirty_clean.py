@@ -126,8 +126,8 @@ Fs = 2
 n_epochs = 5
 b = 0.8
 Q = 21
-T_what = 0.95
-#code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
+Tw = 0.95
+#code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, Tw)
 
 # UPSCALE LAYER
 l1_in_dim = k * Q * Q  # Codes after retinotopic step

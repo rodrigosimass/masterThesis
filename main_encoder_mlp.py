@@ -24,8 +24,8 @@ if __name__ == "__main__":
     n_epochs = 5
     b = 0.8
     Q = 21
-    T_what = 0.95
-    code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, T_what)
+    Tw = 0.95
+    code_id = get_codes_run_name(k, Fs, n_epochs, b, Q, Tw)
 
     # MLP
     dim_hid = [2000, 4000]
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 "ww_n_epochs": n_epochs,
                 "ww_b": b,
                 "ww_Q": Q,
-                "ww_Tw": T_what,
+                "ww_Tw": Tw,
                 "MLP_n_layers": len(dim_hid),
                 "MLP_n_units": dim_hid,
                 "ann_lr": lr,

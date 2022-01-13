@@ -269,7 +269,7 @@ def learn_features(trn_imgs, k, Fs, rng, n_epochs, background=0.8, kmeans=None):
     return kmeans.cluster_centers_.reshape((-1,) + patch_size)
 
 
-def learn_codes(trn_imgs, k, Q, features, T_what, wta):
+def learn_codes(trn_imgs, k, Q, features, Tw, wta):
 
     codes = np.zeros((trn_imgs.shape[0], k * Q ** 2))
     polar_params = np.zeros((trn_imgs.shape[0], 3))
@@ -279,7 +279,7 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
 
     for i in trange(trn_imgs.shape[0], desc="Generating codes", unit="datasample"):
         img = trn_imgs[i]
-        a = mu_ret(img, features, T_what, wta=wta)
+        a = mu_ret(img, features, Tw, wta=wta)
         s = enum_set(a)
 
         if s.size != 0:
@@ -298,7 +298,7 @@ def learn_codes(trn_imgs, k, Q, features, T_what, wta):
 
     if cnt_a + cnt_rad > 0:
         print(
-            f"WARNING: {cnt_a} zero activity, and {cnt_rad} zero rad codes were discarded"
+            f"WARNING: {cnt_a} zero-activity, and {cnt_rad} zero-rad codes."
         )
 
     return csr_matrix(codes), polar_params
@@ -321,9 +321,10 @@ def measure_sparsity(codes, verbose=False):
 
     return (AS, densest)
 
+
 def np_sparsity(arr):
     arr = arr.flatten()
-    return  len(arr[arr!=0]) / len(arr)
+    return len(arr[arr != 0]) / len(arr)
 
 
 def code_grid(codes, K, Q):

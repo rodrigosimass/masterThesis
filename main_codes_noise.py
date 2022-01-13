@@ -30,7 +30,7 @@ n_epochs = 5
 b = 0.8
 wta = True
 Fs = 2
-T_what = 0.95
+Tw = 0.95
 
 trial_run = False
 l_prob = [0.1, 0.2]  # each item in this list is a different wandb run
@@ -49,7 +49,7 @@ codes, polar_params = compute_codes(
     K,
     Q,
     features,
-    T_what,
+    Tw,
     wta,
     n_epochs,
     b,
@@ -91,7 +91,7 @@ for prob in l_prob:
                 "km_b": b,
                 "km_Fs": Fs,
                 "ww_Q": Q,
-                "ww_Twhat": T_what,
+                "ww_Tw": Tw,
                 "noise_type": noise_type,
                 "noise_prob": prob,
             },

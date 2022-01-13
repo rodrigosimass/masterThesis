@@ -10,6 +10,7 @@ Created on Wed Nov 24 19:11:33 2021
 import numpy as np
 from matplotlib import pyplot as plt
 import tensorflow as tf
+
 #%%
 
 from WhatWhere import sparseWWencoder
@@ -29,10 +30,10 @@ y_used = Y_train[0:100]
 
 K = 12
 f = 5
-T_what = 0.85
+Tw = 0.85
 Q = 50
 
-swwe = sparseWWencoder(K, f, T_what, Q, COSINE=False)
+swwe = sparseWWencoder(K, f, Tw, Q, COSINE=False)
 
 swwe.fit(x_used)
 
@@ -47,7 +48,7 @@ T_where = 5
 att = AttentionMatcher(
     K,
     f,
-    T_what,
+    Tw,
     T_where,
     Q,
     T_pixel=1.2,

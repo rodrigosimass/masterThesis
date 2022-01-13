@@ -24,7 +24,7 @@ if __name__ == "__main__":
     n_epochs = 5
     b = 0.8
     Q = 18
-    T_what = 0.6
+    Tw = 0.6
     wta = True
 
     # early stopping
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         k,
         Q,
         features,
-        T_what,
+        Tw,
         wta,
         n_epochs,
         b,
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         k,
         Q,
         features,
-        T_what,
+        Tw,
         wta,
         n_epochs,
         b,
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                 "ww_n_epochs": n_epochs,
                 "ww_b": b,
                 "ww_Q": Q,
-                "ww_Tw": T_what,
+                "ww_Tw": Tw,
                 "ann_lr": lr,
                 "ann_max_epochs": max_epochs,
                 "ann_batch_size": batch_size,

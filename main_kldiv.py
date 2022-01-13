@@ -36,13 +36,13 @@ run_idx = 0
 use_wandb = True
 
 for Fs in list_Fs:
-    for T_what in list_Tw:
+    for Tw in list_Tw:
         features = compute_features(
             trn_imgs, trn_lbls, K, Fs, rng, n_epochs, b, classwise=False
         )
 
         codes, _ = compute_codes(
-            trn_imgs, K, Q, features, T_what, wta, n_epochs, b, Fs, set="trn"
+            trn_imgs, K, Q, features, Tw, wta, n_epochs, b, Fs, set="trn"
         )
         run_name = (
             "k"
@@ -56,7 +56,7 @@ for Fs in list_Fs:
             + "_Q"
             + str(Q)
             + "_Tw"
-            + str(T_what)
+            + str(Tw)
         )
         print(run_name)
         ret = load_ret(run_name)
@@ -76,7 +76,7 @@ for Fs in list_Fs:
                     "km_b": b,
                     "km_Fs": Fs,
                     "ww_Q": Q,
-                    "ww_Twhat": T_what,
+                    "ww_Tw": Tw,
                     "codes_AS": coded_AS,
                     "codes_%B": coded_densest,
                     "codes_KL": code_kl,

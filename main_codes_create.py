@@ -16,7 +16,7 @@ Q = 21  # size of the final object space grid
 wta = True  # winner takes all
 
 Fs = 2  # size of features, Fs = 1 results in a 3by3 filter size (2Fs+1)
-T_what = 0.9  # Treshod for keeping or discarding a detected feature
+Tw = 0.9  # Treshod for keeping or discarding a detected feature
 
 cw = False
 plot = False
@@ -30,7 +30,7 @@ codes, polar = compute_codes(
     K,
     Q,
     features,
-    T_what,
+    Tw,
     wta,
     n_epochs,
     b,
@@ -38,7 +38,7 @@ codes, polar = compute_codes(
     set="trn",
 )
 
-codes_id = get_codes_run_name(K, Fs, n_epochs, b, Q, T_what, wta, cw)
+codes_id = get_codes_run_name(K, Fs, n_epochs, b, Q, Tw, wta, cw)
 if cw:
     codes_id += "cw"
 

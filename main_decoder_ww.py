@@ -82,7 +82,7 @@ for prob in l_prob:
 
     if USE_WANDB:
         wandb.init(
-            project="whatwhere_salt",
+            project="decoder_whatwhere",
             entity="rodrigosimass",
             config={
                 "km_K": K,

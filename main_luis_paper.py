@@ -1,7 +1,6 @@
 """
 Reproduction of Sa-Conto and Wichert 2020
 """
-#%%
 import numpy as np
 from util.whatwhere.encoder import *
 from util.whatwhere.decoder import *
@@ -15,7 +14,6 @@ import wandb
 from util.kldiv import *
 from tqdm import trange
 
-#%%
 rng = np.random.RandomState(0)  # reproducible
 K = 20
 Q = 21
@@ -27,8 +25,8 @@ wta = True
 Use  Fs = [1,2] and Tw = [0.88, 0.91, 0.93] to get results close to the paper.
 """
 
-list_Fs = [2]
-list_Tw = [0.9]
+list_Fs = [1, 2]
+list_Tw = [0.88, 0.91, 0.93]
 
 
 trial_run = False  # if True: Reduce the size of the datasets for debugging
@@ -40,7 +38,7 @@ if len(sys.argv) < 2:
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
 
-for T_what in list_Tw:
+for Tw in list_Tw:
     for Fs in list_Fs:
         features = compute_features(imgs, lbls, K, Fs, rng, n_epochs, b)
 
@@ -49,7 +47,7 @@ for T_what in list_Tw:
             K,
             Q,
             features,
-            T_what,
+            Tw,
             wta,
             n_epochs,
             b,
@@ -78,7 +76,7 @@ for T_what in list_Tw:
                     "km_b": b,
                     "km_Fs": Fs,
                     "ww_Q": Q,
-                    "ww_Twhat": T_what,
+                    "ww_Twhat": Tw,
                     "codes_AS": coded_AS,
                     "codes_%B": coded_densest,
                 },
@@ -116,17 +114,18 @@ for T_what in list_Tw:
             wn.store(new_data)  # store new data
             ret = wn.retrieve(codes[:n_stored])  # retrieve everything stored so far
 
+            # measure sparsity
             ret_AS, ret_densest = measure_sparsity(ret)
             will_S = wn.sparsity()
 
             ret_lbls = lbls[:n_stored]
 
+            # measure errors
             pre = perfect_retrieval_error(codes[:n_stored], ret)
 
-            err1 = err_1NNclassifier(ret, ret_lbls, codes[:n_stored], lbls[:n_stored])
-            err2 = err_1NNclassifier(ret, ret_lbls, codes, lbls)  # este
-            err3 = err_1NNclassifier(codes[:n_stored], lbls[:n_stored], ret, ret_lbls)
-            err4 = err_1NNclassifier(codes, lbls, ret, ret_lbls)
+            err_1NN = err_1NNclassifier(
+                ret, ret_lbls, codes[:n_stored], lbls[:n_stored]
+            )
 
             hd_extra, hd_lost, hd = hamming_distance_detailed(
                 codes[:n_stored], ret[:n_stored]
@@ -135,15 +134,12 @@ for T_what in list_Tw:
             if USE_WANDB:
                 # step-wise log
                 log_dict = {
+                    "err_1NN_": err_1NN,
                     "will_S": will_S,
                     "ret_AS": ret_AS,
                     "ret_%B": ret_densest,
                     "cod_AS": coded_AS,
                     "cod_%B": coded_densest,
-                    "err_1NN_1": err1,
-                    "err_1NN_2": err2,
-                    "err_1NN_3": err3,
-                    "err_1NN_4": err4,
                     "err_hd": hd,
                     "err_hd_extra": hd_extra,
                     "err_hd_lost": hd_lost,
@@ -155,12 +151,9 @@ for T_what in list_Tw:
                 wandb.log(log_dict, step=n_stored)
             else:
                 print(f"n_stored = {n_stored:.5f}")
-                print(f"    pre        = {pre:.5f}")
-                print(f"    1NN error1 = {err1:.5f}")
-                print(f"    1NN error2 = {err2:.5f}")
-                print(f"    1NN error3 = {err3:.5f}")
-                print(f"    1NN error4 = {err4:.5f}")
-                print(f"    hd = {hd:.5f}")
+                print(f"    pre     = {pre:.5f}")
+                print(f"    err_1NN = {err_1NN:.5f}")
+                print(f"    hd      = {hd:.5f}")
                 print(f"        hd_extra = {hd_extra:.5f}")
                 print(f"        hd_lost  = {hd_lost:.5f}")
 

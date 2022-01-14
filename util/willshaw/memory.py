@@ -151,16 +151,16 @@ def err_1NNclassifier(trn, trn_lbls, tst, tst_lbls):
     @param tst_lbls: np array with labels of tst
     @tsturn err: classification error
     """
-    # (n_tst*size).(n_trn*size).T = (n_tst*n_trn) similarity
-    sim = csr_matrix.dot(tst, trn.T)
+    # (n_tst*size).(n_trn*size).T
+    sim = csr_matrix.dot(tst, trn.T)  # (n_tst*n_trn)
     # for each tst example, which is the nearest trn example
-    nn = csr_matrix.argmax(sim, axis=1)
+    nn = csr_matrix.argmax(sim, axis=1)  # (n_tst*1)
 
-    truth = tst_lbls.flatten()  # true label of the tst patterns
+    truth = tst_lbls.flatten()  # (n_tst*1)
     prediction = trn_lbls[nn].flatten()  # label of the most similar neighbour
 
     diff = prediction - truth
-    err = np.count_nonzero(diff) / tst.shape[0]
+    err = np.count_nonzero(diff) / diff.shape[0]
 
     return err
 
@@ -184,8 +184,6 @@ def eval(codes, codes_lbls, ret, ret_lbls):
 
     return pre, hd_extra, hd_lost, hd, err_1nn
 
-
-#%%
 
 if __name__ == "__main__":
 

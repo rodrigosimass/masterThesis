@@ -5,7 +5,7 @@ from .willshaw.memory import *
 """ RUN-NAME GETTERS """
 
 
-def get_features_run_name(k, Fs, n_epochs, b, classwise):
+def get_features_run_name(k, Fs, n_epochs, b, classwise=False):
     return (
         "k"
         + str(k)

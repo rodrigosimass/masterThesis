@@ -82,8 +82,8 @@ for Tw in list_Tw:
         tst_descs = noisy_x_hot_encoding(tst_lbls, x, p_c, p_r)
 
         desc_size = descs.shape[1]
-        descs_codes = concatenate(descs, codes)
-        tst_descs_codes = concatenate(tst_descs, tst_codes)
+        desCodes = concatenate(descs, codes)
+        tst_desCodes = concatenate(tst_descs, tst_codes)
 
         if USE_WANDB:
 
@@ -131,7 +131,7 @@ for Tw in list_Tw:
 
         max_fos = int(codes.shape[0] / codes.shape[1])
 
-        wn = AAWN(descs_codes.shape[1])  # memory for codes and descs
+        wn = AAWN(desCodes.shape[1])  # memory for codes and descs
         wn_small = AAWN(codes.shape[1])
 
         x_l = []
@@ -142,37 +142,41 @@ for Tw in list_Tw:
         for fos in trange(max_fos, desc="main", unit="fos"):
 
             n_stored = code_size * (fos + 1)
-            new_data = descs_codes[n_stored - code_size : n_stored]
+            new_data = desCodes[n_stored - code_size : n_stored]
             new_data_small = codes[n_stored - code_size : n_stored]
-            
-            zero_descs = np.zeros((n_stored, desc_size)) 
+
+            zero_descs = np.zeros((n_stored, desc_size))
             empydesc_codes = concatenate(zero_descs, codes[:n_stored])
 
             wn.store(new_data)
             wn_small.store(new_data_small)
 
             ret_normal = wn_small.retrieve(codes[:n_stored])
-            
-            ret = wn.retrieve(descs_codes[:n_stored])
+
+            ret = wn.retrieve(desCodes[:n_stored])
             ret = deconcatenate(ret, desc_size)[1]
-            
+
             ret_zero = wn.retrieve(empydesc_codes[:n_stored])
             ret_zero = deconcatenate(ret_zero, desc_size)[1]
 
-            err1 = err_1NNclassifier(codes[:n_stored], trn_lbls[:n_stored], ret_normal, trn_lbls[:n_stored])
-            err2 = err_1NNclassifier(codes[:n_stored], trn_lbls[:n_stored], ret, trn_lbls[:n_stored])
-            err3 = err_1NNclassifier(codes[:n_stored], trn_lbls[:n_stored], ret_zero, trn_lbls[:n_stored])
-
+            err1 = err_1NNclassifier(
+                codes[:n_stored], trn_lbls[:n_stored], ret_normal, trn_lbls[:n_stored]
+            )
+            err2 = err_1NNclassifier(
+                codes[:n_stored], trn_lbls[:n_stored], ret, trn_lbls[:n_stored]
+            )
+            err3 = err_1NNclassifier(
+                codes[:n_stored], trn_lbls[:n_stored], ret_zero, trn_lbls[:n_stored]
+            )
 
             x_l.append(n_stored)
             y1_l.append(err1)
             y2_l.append(err2)
-            y3_l.append(err3) 
-            
+            y3_l.append(err3)
 
-            """ aa_r = autoassociation(descs_codes[:n_stored], desc_size, wn)
-            compl_r = completion(descs_codes[:n_stored], desc_size, wn)
-            class_r = classification(tst_descs_codes, desc_size, wn)
+            """ aa_r = autoassociation(desCodes[:n_stored], desc_size, wn)
+            compl_r = completion(desCodes[:n_stored], desc_size, wn)
+            class_r = classification(tst_desCodes, desc_size, wn)
 
             aa_score = interval_classifier(aa_r, trn_lbls[:n_stored], x)
             compl_score = interval_classifier(compl_r, trn_lbls[:n_stored], x)
@@ -199,20 +203,19 @@ for Tw in list_Tw:
 
                 wandb.log(log_dict, step=n_stored)
 
-
         if USE_WANDB:
             wandb.finish()
 
     """ label_l = ["Autoassociation", "Completion", "Classification"] """
-    label_l = ["normal", "with lbl", "with zero lbl"] 
-    
+    label_l = ["normal", "with lbl", "with zero lbl"]
+
     y_l_l = [y1_l, y2_l, y3_l]
     plot_multiple_line_charts(
         x_l,
         y_l_l,
         label_l,
-        xlabel="num_stored",
+        xlabel="n_stored",
         ylabel="1NN error",
-        #title=f"noisy_x_hot (x={x}, p_c={p_c}, p_r={p_r})",
+        # title=f"noisy_x_hot (x={x}, p_c={p_c}, p_r={p_r})",
         path="img/lbl_descs/1NNclassifier4.png",
     )

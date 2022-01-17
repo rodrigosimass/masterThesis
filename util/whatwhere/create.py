@@ -11,8 +11,8 @@ def compute_prob_dist(codes):
 
 def avg_bits_per_code(codes):
     nnz = codes.nnz
-    num_codes = codes.shape[0]
-    return nnz / num_codes
+    n_codes = codes.shape[0]
+    return nnz / n_codes
 
 
 def sample_from_dist(dist, n=1):

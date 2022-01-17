@@ -6,8 +6,8 @@ tmux   : cria um session nova
 tmux a :para connectar
 
 Ctr+b :para commandos tmux: 
-    d : para desconectar
-    w : para ver as sessions todas
+    d : detatch
+    w : ver as sessions todas
 
     $ : rename session
     , : rename window
@@ -18,6 +18,3 @@ Ctr+b :para commandos tmux:
     p previous window
     % split vertically
     " split horizontally
-
-windows command:
-C:/Users/rodrigo/AppData/Local/Programs/Python/Python39/python.exe c:/Users/rodrigo/Desktop/MasterThesis/main_whatwhere.py 0

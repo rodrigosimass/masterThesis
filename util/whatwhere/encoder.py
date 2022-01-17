@@ -184,11 +184,11 @@ def grid_encoding(x, Q, k):
 
 
 def learn_classwise_features(
-    trn_imgs, trn_lbls, k, Fs, rng, n_epochs, background=0.8, num_classes=10
+    trn_imgs, trn_lbls, k, Fs, rng, n_epochs, background=0.8, n_classes=10
 ):
 
     if k % 10 != 0:
-        print(f"ERROR: K must be multiple of <{num_classes}> for classwise features")
+        print(f"ERROR: K must be multiple of <{n_classes}> for classwise features")
         exit(0)
     else:
         k_per_class = int(k / 10)
@@ -200,7 +200,7 @@ def learn_classwise_features(
 
     kernels = np.zeros((k, 1 + 2 * Fs, 1 + 2 * Fs))
 
-    for i in trange(num_classes, desc="Learning dictionary (classwise)", unit="class"):
+    for i in trange(n_classes, desc="Learning dictionary (classwise)", unit="class"):
         class_imgs = trn_imgs[trn_lbls == i]
         kmeans = MiniBatchKMeans(n_clusters=k_per_class, random_state=rng, verbose=True)
         buffer = []
@@ -297,9 +297,7 @@ def learn_codes(trn_imgs, k, Q, features, Tw, wta):
             polar_params[i] = np.array([0, 0, 1])
 
     if cnt_a + cnt_rad > 0:
-        print(
-            f"WARNING: {cnt_a} zero-activity, and {cnt_rad} zero-rad codes."
-        )
+        print(f"WARNING: {cnt_a} zero-activity, and {cnt_rad} zero-rad codes.")
 
     return csr_matrix(codes), polar_params
 

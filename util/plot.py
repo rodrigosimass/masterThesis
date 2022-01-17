@@ -41,9 +41,9 @@ def plot_dists(l_dists, l_d, l_kl, l_e):
 
 
 def multiple_imshow(imgs, layout=None, title=None, m=0, M=1):
-    num_imgs = imgs.shape[0]
+    n_imgs = imgs.shape[0]
     if layout == None:
-        layout = best_layout(num_imgs)
+        layout = best_layout(n_imgs)
     fig, _ = plt.subplots(layout[0], layout[1])
     if title:
         fig.suptitle(title)

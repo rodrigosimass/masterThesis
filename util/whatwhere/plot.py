@@ -153,13 +153,13 @@ def plot_recon_examples(imgs, lbls, codes, k, Q, run_name, features, polar):
     plt.savefig(f"img/whatwhere/{run_name}__recons.png", dpi=300)
 
 
-def plot_examples(D, X_trn, K, k, Q, run_name, set, num_examples=3):
+def plot_examples(D, X_trn, K, k, Q, run_name, set, n_examples=3):
 
     Tr = X_trn.toarray()
     size = Tr.shape[0]
     Tr = Tr.reshape(size, k, Q * Q)
 
-    fig, axs = plt.subplots(num_examples + 1, 2, constrained_layout=True)
+    fig, axs = plt.subplots(n_examples + 1, 2, constrained_layout=True)
     str = "{:.5f}".format(binary_sparsity(Tr))
     fig.suptitle(f"Examples of feature maps ({set} set) %B = {str}")
 
@@ -182,7 +182,7 @@ def plot_examples(D, X_trn, K, k, Q, run_name, set, num_examples=3):
     axs[0][1].set_title("Coded pattern")
 
     random.seed(0)
-    for i in range(1, num_examples + 1):
+    for i in range(1, n_examples + 1):
         rand_k = random.randint(0, k - 1)
         axs[i][0].imshow(
             K[rand_k], vmax=1, vmin=0, cmap=plt.cm.gray, interpolation="nearest"

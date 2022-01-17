@@ -21,13 +21,13 @@ class AAWN:
     Atributes:
         n          : number of neurons
         W          : weight matrix (n*n csr_matrix)
-        num_stored : number of stored pattenrs
+        n_stored : number of stored pattenrs
     """
 
     def __init__(self, n):
         self.n = n  # number of neurons
         self.W = None  # csr_matrix weight matrix
-        self.num_stored = 0  # num of stored pattens
+        self.n_stored = 0  # num of stored pattens
 
     def sparsity(self):
         """
@@ -50,18 +50,18 @@ class AAWN:
         else:
             weights = self.W.toarray()
 
-        for i in trange(patterns.shape[0], desc="Storing", leave=False):
+        for i in trange(patterns.shape[0], desc="Trian WN", leave=False):
             pattern = patterns[i]
-            num_nz = len(pattern.indices)
-            for i in range(num_nz):
-                for j in range(i, num_nz):
+            n_nz = len(pattern.indices)
+            for i in range(n_nz):
+                for j in range(i, n_nz):
                     idx_i = pattern.indices[i]
                     idx_j = pattern.indices[j]
                     weights[idx_i, idx_j] = 1
                     weights[idx_j, idx_i] = 1
 
         self.W = csr_matrix(weights)
-        self.num_stored += patterns.shape[0]
+        self.n_stored += patterns.shape[0]
 
     def retrieve(self, cues):
         """
@@ -91,7 +91,7 @@ class AAWN:
         self.W = None
         self.nnz = 0
         self.s = 0.0
-        self.num_stored = 0
+        self.n_stored = 0
 
 
 """ ------------------------------------------------------------ """
@@ -192,13 +192,13 @@ if __name__ == "__main__":
     dataset = csr_matrix(np.vstack((right, left)))
 
     print("Dataset:\n", dataset.toarray())
-    num_patterns = dataset.shape[0]
+    n_patterns = dataset.shape[0]
     pattern_size = dataset.shape[1]
 
     wn = AAWN(pattern_size)
     wn.store(dataset)
 
-    print(f"Memory has {wn.num_stored} stored patterns.")
+    print(f"Memory has {wn.n_stored} stored patterns.")
     print("Weight matrix:\n", wn.W.toarray())
     print(f"Sparsity of W = {wn.sparsity()}")
 
@@ -221,4 +221,4 @@ if __name__ == "__main__":
 
     print("Forgeting...")
     wn.forget()
-    print(f"Memory has {wn.num_stored} stored patterns.")
+    print(f"Memory has {wn.n_stored} stored patterns.")

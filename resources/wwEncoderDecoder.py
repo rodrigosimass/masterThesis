@@ -40,7 +40,7 @@ class RetLayer:
     def fit(self, x):
         """
         Computes the dictionary of features, stores in in self.km
-        @param x: 3d np array (num_images, img_hight, img_width)
+        @param x: 3d np array (n_images, img_hight, img_width)
         """
         K = self.K
         p = self.p

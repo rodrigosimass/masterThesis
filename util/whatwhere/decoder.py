@@ -120,11 +120,11 @@ def reconstruct_slow(code, features, Q):
     return r
 
 
-def recon_grid(recons, size, num_examples=10):
-    recons = recons[:num_examples]
-    recons = recons.reshape((num_examples, Q, Q, K))
+def recon_grid(recons, size, n_examples=10):
+    recons = recons[:n_examples]
+    recons = recons.reshape((n_examples, Q, Q, K))
     recons = np.sum(recons, axis=3)
-    recons.reshape(num_examples, Q, Q)
+    recons.reshape(n_examples, Q, Q)
 
     tensor = torch.from_numpy(recons)
     tensor = torch.unsqueeze(tensor, dim=1)

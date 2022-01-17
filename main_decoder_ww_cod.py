@@ -142,25 +142,23 @@ for prob in l_prob:
     wn = AAWN(code_size)  # empty memory
     for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
 
-        num_stored = code_size * (fos + 1)
+        n_stored = code_size * (fos + 1)
 
         """ train the memory with clean data """
-        new_data = codes[num_stored - code_size : num_stored]
+        new_data = codes[n_stored - code_size : n_stored]
         wn.store(new_data)
 
         """ present the memory with noisy versions of the data """
-        ret = wn.retrieve(codes_noisy[:num_stored])
+        ret = wn.retrieve(codes_noisy[:n_stored])
 
         """ create reconstructions """
-        recons = recon_with_polar(ret, features, polar_params[:num_stored], Q, K)
+        recons = recon_with_polar(ret, features, polar_params[:n_stored], Q, K)
 
         """ measure reconstruction MSE """
-        extra, lost, mse = mse_detailed(recons, imgs[:num_stored])
+        extra, lost, mse = mse_detailed(recons, imgs[:n_stored])
 
         """ evaluate quality of codes """
-        err = eval(
-            codes[:num_stored], lbls[:num_stored], ret[:num_stored], lbls[:num_stored]
-        )
+        err = eval(codes[:n_stored], lbls[:n_stored], ret[:n_stored], lbls[:n_stored])
 
         if USE_WANDB:
             log_dict = {
@@ -181,7 +179,7 @@ for prob in l_prob:
             log_dict["Ret"] = wandb.Image(code_grid(ret[idx], K, Q))
             log_dict["Recon"] = wandb.Image(np_to_grid(recons[idx]))
 
-            wandb.log(log_dict, step=num_stored)
+            wandb.log(log_dict, step=n_stored)
 
     if USE_WANDB:
         wandb.finish()

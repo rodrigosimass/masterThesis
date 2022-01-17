@@ -35,9 +35,9 @@ def mse_detailed(pred, truth):
     @return lost: positive swuared error
     @return mse: mean squared error
     """
-    num_patterns = truth.shape[0]
-    pred = pred.reshape(num_patterns, -1)
-    truth = truth.reshape(num_patterns, -1)
+    n_patterns = truth.shape[0]
+    pred = pred.reshape(n_patterns, -1)
+    truth = truth.reshape(n_patterns, -1)
 
     pattern_size = truth.shape[1]
 
@@ -46,8 +46,8 @@ def mse_detailed(pred, truth):
     extra = np.square(diff[diff < 0])  # neg
     lost = np.square(diff[diff >= 0])  # pos
 
-    extra = extra.sum() / (num_patterns * pattern_size) if extra.size != 0 else 0
-    lost = lost.sum() / (num_patterns * pattern_size) if lost.size != 0 else 0
+    extra = extra.sum() / (n_patterns * pattern_size) if extra.size != 0 else 0
+    lost = lost.sum() / (n_patterns * pattern_size) if lost.size != 0 else 0
 
     mse = extra + lost
 

@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 """ ------------------------------------------------------------ """
 
 
-def noisy_x_hot_encoding(lbls, x=50, p_c=0.5, p_r=0.0, num_classes=10):
+def noisy_x_hot_encoding(lbls, x=50, p_c=0.5, p_r=0.0, n_classes=10):
     """
     "Stochastic" vervion of x_hot: the x units correscoping to the class will
     activate with p_class (high value), the rest of the array will activate with p_rest (low value)
     """
-    descs = np.zeros(shape=(lbls.shape[0], num_classes * x))
+    descs = np.zeros(shape=(lbls.shape[0], n_classes * x))
     for i in range(lbls.shape[0]):
         lbl = lbls[i]
         start = lbl * x
@@ -31,19 +31,19 @@ def noisy_x_hot_encoding(lbls, x=50, p_c=0.5, p_r=0.0, num_classes=10):
     return descs
 
 
-def cochlea_encodeing(lbls, class_total=11, class_on=3, num_classes=10):
+def cochlea_encodeing(lbls, class_total=11, class_on=3, n_classes=10):
     """
     Sparser version of x-hot encoding.
     Each class has its own space (class_total) but will only have the central bits of its sapce on.
-    Sparsity = class_total * num_classes / class_on
-    Size = num_classes * class_total
-    @param lbls : 1D np array (num_patterns * 1) with int labels like {0,1,2,...,num_class}
+    Sparsity = class_total * n_classes / class_on
+    Size = n_classes * class_total
+    @param lbls : 1D np array (n_patterns * 1) with int labels like {0,1,2,...,n_class}
     @param class_total : total class space (should be odd number)
     @param class_on : on bits per class
-    @param num_class : number of different classes (MNIST is 10)
+    @param n_class : number of different classes (MNIST is 10)
     @returns descs: 2D np binary array with encoding
     """
-    descs = np.zeros(shape=(lbls.shape[0], num_classes * class_total))
+    descs = np.zeros(shape=(lbls.shape[0], n_classes * class_total))
     for i in range(lbls.shape[0]):
         lbl = lbls[i]
         start = lbl * class_total + int((class_total - class_on) / 2)
@@ -57,38 +57,38 @@ def bin_array(num, m):
     return np.array(list(np.binary_repr(num).zfill(m))).astype(np.int8)
 
 
-def bin_encoding(lbls, num_classes=10):
+def bin_encoding(lbls, n_classes=10):
     """
     Transforms integer lables into binary labels.
-    @param lbls : 1D np array (num_patterns * 1) with int labels like {0,1,2,...,num_class}
-    @param num_class : number of different classes (MNIST is 10)
+    @param lbls : 1D np array (n_patterns * 1) with int labels like {0,1,2,...,n_class}
+    @param n_class : number of different classes (MNIST is 10)
     @returns bin_enc: 2D np binary array with encoding
     """
-    bits_per_lbl = math.ceil(math.log2(num_classes))
-    num_patterns = lbls.shape[0]
+    bits_per_lbl = math.ceil(math.log2(n_classes))
+    n_patterns = lbls.shape[0]
 
-    bin_enc = np.zeros(shape=(num_patterns, bits_per_lbl), dtype=int)
+    bin_enc = np.zeros(shape=(n_patterns, bits_per_lbl), dtype=int)
 
-    for i in trange(num_patterns, desc="Encoding labels", leave=False):
+    for i in trange(n_patterns, desc="Encoding labels", leave=False):
         bin_enc[i] = bin_array(lbls[i], bits_per_lbl)
 
     return bin_enc
 
 
-def x_hot_encoding(lbls, x=1, num_classes=10, reordered=False, order=None):
+def x_hot_encoding(lbls, x=1, n_classes=10, reordered=False, order=None):
     """
     Transforms an array of integer labels into binary x-hot codes.
-    Sparsity of encoding will always be 1/num_class.
-    @param lbls : 1D np array (num_patterns * 1) with int labels like {0,1,2,...,num_class}
+    Sparsity of encoding will always be 1/n_class.
+    @param lbls : 1D np array (n_patterns * 1) with int labels like {0,1,2,...,n_class}
     @param x : desired number of 1s in the encoding (default is one-hot encoding)
-    @param num_class : number of different classes (MNIST is 10)
+    @param n_class : number of different classes (MNIST is 10)
     @returns: 2D np binary array with encoding
     """
-    num_patterns = lbls.shape[0]
+    n_patterns = lbls.shape[0]
 
-    x_hot = np.zeros(shape=(num_patterns, num_classes * x), dtype=int)
+    x_hot = np.zeros(shape=(n_patterns, n_classes * x), dtype=int)
 
-    for i in trange(num_patterns, desc="Encoding labels", leave=False):
+    for i in trange(n_patterns, desc="Encoding labels", leave=False):
         lbl = lbls[i]
         start = lbl * x
         end = start + x
@@ -100,9 +100,9 @@ def x_hot_encoding(lbls, x=1, num_classes=10, reordered=False, order=None):
 def concatenate(descs, codes):
     """
     Concatenates description (Desc|Codes).
-    @param codes: 2D csr matrix (num_codes * code_size) with binary code.
-    @param descs: 2D np array (num_codes * desc_size) with binary coded description.
-    @returns desc_code: 2D csr binary matrix (num_codes * (desc_size + code_size)) (Desc|Codes)
+    @param codes: 2D csr matrix (n_codes * code_size) with binary code.
+    @param descs: 2D np array (n_codes * desc_size) with binary coded description.
+    @returns desc_code: 2D csr binary matrix (n_codes * (desc_size + code_size)) (Desc|Codes)
     """
     if codes.shape[0] != descs.shape[0]:
         print(
@@ -118,10 +118,10 @@ def concatenate(descs, codes):
 def deconcatenate(concatenated, desc_size=10):
     """
     UNDO of concatenate() function
-    @param concatenated: 2D csr binary matrix (num_patterns * (desc_size + code_size)) descs (left) + codes (right)
+    @param concatenated: 2D csr binary matrix (n_patterns * (desc_size + code_size)) descs (left) + codes (right)
     @param desc_size: index for column-wise slice
-    @returns descs: 2D np array (num_codes * desc_size)
-    @returns codes: 2D csr matrix (num_codes * desc_size)
+    @returns descs: 2D np array (n_codes * desc_size)
+    @returns codes: 2D csr matrix (n_codes * desc_size)
     """
 
     split = np.split(concatenated.toarray(), indices_or_sections=[desc_size], axis=1)
@@ -147,12 +147,12 @@ def plot_class_act(descs, lbls, c):
 """ ------------------------------------------------------------ """
 
 
-def interval_classifier(prediction, truth, n=11, num_classes=10, verbose=False):
+def interval_classifier(prediction, truth, n=11, n_classes=10, verbose=False):
     correct = 0
     for i in trange(prediction.shape[0], leave=False, desc="Interval classifier"):
         max = 0
         pred = 0
-        for c in range(num_classes):
+        for c in range(n_classes):
             class_sum = np.sum(prediction[i][c * n : (c + 1) * n])
             if class_sum > max:
                 max = class_sum
@@ -164,31 +164,31 @@ def interval_classifier(prediction, truth, n=11, num_classes=10, verbose=False):
     return correct / prediction.shape[0]
 
 
-def autoassociation(descs_codes, desc_size, full_memory):
+def autoassociation(desCodes, desc_size, full_memory):
     """
     Measures how good the memory is at maintaining the correct label in
     auto-association.
-    @param descs_codes: 2D binary csr_matrix (desc|code)
+    @param desCodes: 2D binary csr_matrix (desc|code)
     @param desc_size: size of description
-    @param full_memory: AAWN memory already storing descs_codes
+    @param full_memory: AAWN memory already storing desCodes
     @returns descs: descs before memory
     @returns descs_ret: descs after memory
     """
-    ret = full_memory.retrieve(descs_codes)
+    ret = full_memory.retrieve(desCodes)
     descs_ret = deconcatenate(ret, desc_size)[0]
 
     return descs_ret
 
 
-def completion(descs_codes, desc_size, full_memory):
+def completion(desCodes, desc_size, full_memory):
     """
     Measures how good the memory is at completing the missing
     desc of stored patterns
-    @param descs_codes: 2D binary csr_matrix (desc|code)
+    @param desCodes: 2D binary csr_matrix (desc|code)
     @param desc_size: size of description
-    @param full_memory: AAWN memory already storing descs_codes
+    @param full_memory: AAWN memory already storing desCodes
     """
-    codes = deconcatenate(descs_codes, desc_size)[1]
+    codes = deconcatenate(desCodes, desc_size)[1]
     empty_descs = np.zeros((codes.shape[0], desc_size))
     just_codes = concatenate(empty_descs, codes)
     ret = full_memory.retrieve(just_codes)
@@ -197,14 +197,14 @@ def completion(descs_codes, desc_size, full_memory):
     return descs_ret
 
 
-def classification(tst_descs_codes, desc_size, full_memory):
+def classification(tst_desCodes, desc_size, full_memory):
     """
     Measures how good the memory is classifying unseen codes.
-    @param descs_codes: 2D binary csr_matrix (desc|code) with tst set
+    @param desCodes: 2D binary csr_matrix (desc|code) with tst set
     @param desc_size: size of description
-    @param full_memory: AAWN memory already storing descs_codes
+    @param full_memory: AAWN memory already storing desCodes
     """
-    tst_codes = deconcatenate(tst_descs_codes, desc_size)[1]
+    tst_codes = deconcatenate(tst_desCodes, desc_size)[1]
     empty_descs = np.zeros((tst_codes.shape[0], desc_size))
     just_codes = concatenate(empty_descs, tst_codes)
     ret = full_memory.retrieve(just_codes)
@@ -213,8 +213,8 @@ def classification(tst_descs_codes, desc_size, full_memory):
     return descs_ret
 
 
-def generate(gen_descs_codes, full_memory, desc_size):
-    ret = full_memory.retrieve(gen_descs_codes)
+def generate(gen_desCodes, full_memory, desc_size):
+    ret = full_memory.retrieve(gen_desCodes)
     gen_codes = deconcatenate(ret, desc_size)[1]
     return gen_codes
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     print("Description (One-hot):")
     print(one_hot)
 
-    three_hot = x_hot_encoding(lbls, x=3, num_classes=10)
+    three_hot = x_hot_encoding(lbls, x=3, n_classes=10)
     print("Description (Three-hot):")
     print(three_hot)
 

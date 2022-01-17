@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 import wandb
 from tqdm import trange
@@ -12,17 +11,16 @@ from util.willshaw.plot import *
 from util.pytorch.tools import np_to_grid
 from util.kldiv import *
 from util.basic_utils import mse_detailed
+from util.whatwhere.description_encoding import *
 
-#%%
 
 if len(sys.argv) < 2:
     print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
 
-#%%
 
-""" Code generation parameters """
+""" Code generation params """
 rng = np.random.RandomState(0)  # reproducible
 K = 20
 Q = 21
@@ -30,11 +28,20 @@ n_epochs = 5
 b = 0.8
 wta = True
 Fs = 2
-Tw = 0.95
+Tw = 0.9
+
+"""Noisy-x-hot Description params"""
+x = 100
+Pc = 0.5
+Pr = 0.0
+
+""" Noise params """
+l_prob = [0.0]  # each item in this list is a different wandb run
+noise_type = "none"  # zero, one or none
+
+""" ----------------------------------------------------------------------- """
 
 trial_run = False
-l_prob = [0.1, 0.2]  # each item in this list is a different wandb run
-noise_type = "one"  # zero, one or none
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)
@@ -57,28 +64,22 @@ codes, polar_params = compute_codes(
     verbose=False,
 )
 
-#%%
 
 code_size = codes.shape[1]
+
 if trial_run:
-    # Reduce the size of the datasets for debugging
+    # Reduce the size of the datasets for debugging (2*fos)
     imgs = imgs[: code_size * 2]
-    lbls = lbls[: code_size * 2]
     lbls = lbls[: code_size * 2]
     codes = codes[: code_size * 2]
     polar_params = polar_params[: code_size * 2]
 
+descs = noisy_x_hot_encoding(lbls, x, Pc, Pr)
+desc_size = descs.shape[1]
+
 for prob in l_prob:
-    if noise_type == "zero":
-        codes_noisy = add_zero_noise(codes, prob)
-    elif noise_type == "one":
-        codes_noisy = add_one_noise_relative(codes, prob)
-    elif noise_type == "none":
-        codes_noisy = codes
-    else:
-        print(
-            f"Unknown noise type: <<{noise_type}>>.\nUse: <<one>>, <<zero>>, or <<none>>"
-        )
+    codes_noisy = add_noise(codes, noise_type, prob)
+    descs_codes_noisy = concatenate(descs, codes_noisy)
 
     if USE_WANDB:
         wandb.init(
@@ -94,12 +95,16 @@ for prob in l_prob:
                 "ww_Tw": Tw,
                 "noise_type": noise_type,
                 "noise_prob": prob,
+                "NXH_x": x,
+                "NXH_Pc": Pc,
+                "NXH_Pr": Pr,
             },
         )
 
         name = "TRIAL_" if trial_run else ""
-        name += noise_type
+        name += "descs-" + str(x) + "-" + str(Pc) + "-" + str(Pr)
         if noise_type != "none":
+            name += noise_type
             name += "_p" + str(prob)
         wandb.run.name = name
 
@@ -139,27 +144,33 @@ for prob in l_prob:
 
     max_fos = int(codes.shape[0] / codes.shape[1])
 
-    wn = AAWN(code_size)  # empty memory
+    wn = AAWN(desc_size + code_size)  # empty memory
     for fos in trange(max_fos, desc="Storing", unit="factor of stored (fos)"):
 
         num_stored = code_size * (fos + 1)
 
         """ train the memory with clean data """
-        new_data = codes[num_stored - code_size : num_stored]
+        new_data = descs_codes_noisy[num_stored - code_size : num_stored]
         wn.store(new_data)
+        # TODO: we want to train the WN with CLEAN data, (descs_codes, not noisy_descs_codes)
+        # for now its ok, because no noise yet
 
         """ present the memory with noisy versions of the data """
-        ret = wn.retrieve(codes_noisy[:num_stored])
+        ret_descs_codes = wn.retrieve(descs_codes_noisy[:num_stored])
+        ret_descs, ret_codes = detach(ret_descs_codes, desc_size)
 
         """ create reconstructions """
-        recons = recon_with_polar(ret, features, polar_params[:num_stored], Q, K)
+        recons = recon_with_polar(ret_codes, features, polar_params[:num_stored], Q, K)
 
         """ measure reconstruction MSE """
         extra, lost, mse = mse_detailed(recons, imgs[:num_stored])
 
         """ evaluate quality of codes """
         err = eval(
-            codes[:num_stored], lbls[:num_stored], ret[:num_stored], lbls[:num_stored]
+            codes[:num_stored],
+            lbls[:num_stored],
+            ret_codes[:num_stored],
+            lbls[:num_stored],
         )
 
         if USE_WANDB:
@@ -173,12 +184,12 @@ for prob in l_prob:
                 "mse_lost": lost,
                 "mse": mse,
             }
-            sparsity = measure_sparsity(ret)
+            sparsity = measure_sparsity(ret_codes)
             log_dict["sparsity_average"] = sparsity[0]
             log_dict["sparsity_densest"] = sparsity[1]
 
             """ log images """
-            log_dict["Ret"] = wandb.Image(code_grid(ret[idx], K, Q))
+            log_dict["Ret"] = wandb.Image(code_grid(ret_codes[idx], K, Q))
             log_dict["Recon"] = wandb.Image(np_to_grid(recons[idx]))
 
             wandb.log(log_dict, step=num_stored)

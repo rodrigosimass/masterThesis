@@ -33,8 +33,8 @@ Fs = 2
 Tw = 0.95
 
 trial_run = False
-l_prob = [0.1, 0.2]  # each item in this list is a different wandb run
-noise_type = "one"  # zero, one or none
+l_prob = [0.0]  # each item in this list is a different wandb run
+noise_type = "none"  # zero, one or none
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)

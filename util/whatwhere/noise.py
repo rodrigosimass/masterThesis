@@ -67,3 +67,13 @@ def add_one_noise_relative(data, Prepl=0.1):
                 noisy[i][np.random.permutation(zeros)[0]] = 1
 
     return csr_matrix(noisy)
+
+
+def add_noise(codes, noise_type="none", prob=0.1):
+    if noise_type == "zero":
+        codes_noisy = add_zero_noise(codes, prob)
+    elif noise_type == "one":
+        codes_noisy = add_one_noise_relative(codes, prob)
+    elif noise_type == "none":
+        codes_noisy = codes
+    return codes_noisy

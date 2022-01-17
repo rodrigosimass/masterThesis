@@ -180,7 +180,7 @@ def eval(codes, codes_lbls, ret, ret_lbls):
     """
     pre = perfect_retrieval_error(codes, ret)
     hd_extra, hd_lost, hd = hamming_distance_detailed(codes, ret)
-    err_1nn = err_1NNclassifier(codes, codes_lbls, ret, ret_lbls)
+    err_1nn = err_1NNclassifier(ret, ret_lbls, codes, codes_lbls)
 
     return pre, hd_extra, hd_lost, hd, err_1nn
 

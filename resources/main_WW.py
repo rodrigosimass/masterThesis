@@ -1,20 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Nov 24 19:11:33 2021
 
 @author: luissacouto
 """
-
 #%%
 import numpy as np
 from matplotlib import pyplot as plt
 import tensorflow as tf
-
-#%%
-
 from WhatWhere import sparseWWencoder
 from WhatWhere import AttentionMatcher
+
+#%%
 
 mnist = tf.keras.datasets.mnist
 (X_train, Y_train), (X_test, Y_test) = mnist.load_data()

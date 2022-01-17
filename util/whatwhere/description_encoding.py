@@ -3,6 +3,7 @@ from tqdm import trange
 from scipy.sparse import csr_matrix
 import math
 import random
+import matplotlib.pyplot as plt
 
 
 """ ------------------------------------------------------------ """
@@ -128,6 +129,17 @@ def deconcatenate(concatenated, desc_size=10):
     codes = csr_matrix(split[1])
 
     return descs, codes
+
+
+def detach(arr, idx):
+    l = arr[:, 0:idx]
+    r = arr[:, idx:]
+    return (l, r)
+
+
+def plot_class_act(descs, lbls, c):
+    s = np.mean(descs[lbls == c], axis=0)
+    plt.bar(np.arange(s.shape[0]), s)
 
 
 """ ------------------------------------------------------------ """

@@ -9,6 +9,11 @@ from sklearn.cluster import KMeans
 
 
 class RetLayer:
+    """
+    - Treina com unsupervised Kmeans para encontrar o dicionario de features.
+    - Faz o encoding com a "convolution-like" dot product
+    """
+
     def __init__(
         self,
         K,  # num features
@@ -23,7 +28,7 @@ class RetLayer:
     ):
         self.K = K
         self.f = f
-        self.p = f // 2 # Fs    
+        self.p = f // 2  # Fs
         self.RNG = RNG
         self.VERBOSE = VERBOSE
         self.MAX_ITER = MAX_ITER
@@ -33,6 +38,10 @@ class RetLayer:
         self.COSINE = COSINE
 
     def fit(self, x):
+        """
+        Computes the dictionary of features, stores in in self.km
+        @param x: 3d np array (num_images, img_hight, img_width)
+        """
         K = self.K
         p = self.p
         f = self.f
@@ -71,6 +80,7 @@ class RetLayer:
             W = W / np.sqrt((W ** 2).sum(axis=-1, keepdims=True))
             s = v @ W.T
         else:
+            print("WARNING: not using COSINE as similarity measure")
             d = self.km.transform(v)
             s = 1 / d
         return s
@@ -159,8 +169,8 @@ class PolLayer:
         return x_grid
 
     def encode(self, x):
-        pol_set, params = self.set_transform(x) 
-        self.params = params # polar params
+        pol_set, params = self.set_transform(x)
+        self.params = params  # polar params
         if self.Q == 0:
             return pol_set
         return self.grid_encoding(pol_set, self.Q, self.Q, self.K)
@@ -169,7 +179,7 @@ class PolLayer:
         if shape is None:
             shape = (self.Q, self.Q)
         if params is None:
-            params = self.params # polar params
+            params = self.params  # polar params
         if self.Q > 0:
             Q = self.Q
             K = self.K
@@ -238,72 +248,3 @@ class sparseWWencoder:
         ret = self.pollayer.decode(x, shape=shape, params=params)
         pix = self.retlayer.decode(ret)
         return pix
-
-
-""" Esta class e para classificar """
-
-
-class AttentionMatcher:
-    def __init__(
-        self,
-        K,
-        f,
-        Tw,
-        T_where,
-        Q,
-        T_pixel=1.2,
-        COSINE=True,
-        RNG=42,
-        VERBOSE=1,
-        MAX_ITER=300,
-        N_INIT=10,
-    ):
-        self.K = K
-        self.T_where = T_where
-        self.encoder = sparseWWencoder(
-            K,
-            f,
-            Tw,
-            Q,
-            T_pixel=T_pixel,
-            COSINE=COSINE,
-            RNG=RNG,
-            VERBOSE=VERBOSE,
-            MAX_ITER=MAX_ITER,
-            N_INIT=N_INIT,
-        )
-        self.VERBOSE = VERBOSE
-
-    def fit(self, x_train, y_train):
-
-        if self.VERBOSE > 0:
-            print("--------------")
-            print("Learning the encoder now")
-            print("--------------")
-        self.encoder.fit(x_train)
-        x_enc = self.encoder.encode(x_train)
-
-        if self.VERBOSE > 0:
-            print("--------------")
-            print("Learning the matcher now")
-            print("--------------")
-        T_where = self.T_where
-        K = self.K
-        pw = T_where // 2
-        x_win = np.squeeze(
-            view_as_windows(
-                np.pad(x_enc, ((0, 0), (pw, pw), (pw, pw), (0, 0))),
-                (1, T_where, T_where, K),
-            )
-        )
-        x_win = x_win.max(axis=-2).max(axis=-2)
-        self.W = x_win.reshape(x_win.shape[0], -1)
-        self.labels = y_train
-
-    def predict(self, x_test):
-        x_enc = self.encoder.encode(x_test).reshape(x_test.shape[0], -1)
-        z = self.W @ x_enc.T
-        return self.labels[z.argmax(axis=0)]
-
-    def score(self, x_test, y_test):
-        return (self.predict(x_test) == y_test).mean()

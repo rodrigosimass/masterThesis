@@ -21,9 +21,8 @@ n_epochs = 5
 b = 0.8
 wta = True
 
-""" Use  Fs = [1,2], Tw = [0.88, 0.91, 0.93] to get results close to the paper."""
 list_Fs = [1, 2]
-list_Tw = [0.88, 0.91, 0.93]
+list_Tw = [0.75, 0.8, 0.85]
 
 
 trial_run = False  # if True: Reduce the size of the datasets for debugging
@@ -59,9 +58,9 @@ for Tw in list_Tw:
             lbls = lbls[: code_size * 2]
             codes = codes[: code_size * 2]
 
-        if USE_WANDB:
+        coded_AS, coded_densest = measure_sparsity(codes)
 
-            coded_AS, coded_densest = measure_sparsity(codes)
+        if USE_WANDB:
 
             wandb.init(
                 project="main_luis_paper",
@@ -78,8 +77,8 @@ for Tw in list_Tw:
                     "codes_%B": coded_densest,
                 },
             )
-            name = "TRIAL_" if trial_run else ""
-            wandb.run.name = name + f"Fs {Fs} %B {coded_densest:.4f}"
+            name = "TRIAL_" if trial_run else "final"
+            wandb.run.name = name + f"Fs {Fs}  Tw {Tw:.2f}"
 
             # 10 examples stored in the first iteration (visualization)
             ex_idxs = idxs_x_random_per_class(lbls[:code_size])
@@ -111,16 +110,14 @@ for Tw in list_Tw:
             wn.store(new_data)  # store new data
             ret = wn.retrieve(codes[:n_stored])  # retrieve everything stored so far
 
-            # measure sparsity
+            """ measure sparsity """
             ret_AS, ret_densest = measure_sparsity(ret)
             will_S = wn.sparsity()
 
             ret_lbls = lbls[:n_stored]
 
             """ Evaluate """
-            err = eval(
-                codes[:n_stored], lbls[:n_stored], ret[:n_stored], lbls[:n_stored]
-            )
+            err = eval(codes[:n_stored], lbls[:n_stored], ret[:n_stored], ret_lbls)
 
             if USE_WANDB:
                 log_dict = {

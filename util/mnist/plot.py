@@ -4,7 +4,7 @@ import numpy as np
 path = "mnist/data/"
 
 
-def viz_class_activity_2D(data, labels):
+def plot_class_activity_2D(data, labels):
 
     fig, axs = plt.subplots(2, 5, constrained_layout=True)
 
@@ -23,7 +23,7 @@ def viz_class_activity_2D(data, labels):
     plt.savefig(f"img/mnist/class_activity_2D.png", bbox_inches="tight")
 
 
-def viz_class_activity_1D(data, labels, sorted=False):
+def plot_class_activity_1D(data, labels, sorted=False):
 
     fig, axs = plt.subplots(10, 1, sharex=True, sharey=True)
 
@@ -61,7 +61,7 @@ def viz_class_activity_1D(data, labels, sorted=False):
         plt.savefig(f"img/mnist/class_activity_1D.png", bbox_inches="tight")
 
 
-def viz_activity(data, labels):
+def plot_activity(data, labels):
     sum_X = np.sum(data, axis=0)
     # print(np.max(sum_X))
     sum_X = sum_X / data.shape[0]

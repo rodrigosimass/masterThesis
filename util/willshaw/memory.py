@@ -50,7 +50,7 @@ class AAWN:
         else:
             weights = self.W.toarray()
 
-        for i in trange(patterns.shape[0], desc="Trian WN", leave=False):
+        for i in trange(patterns.shape[0], desc="Training WN", leave=False):
             pattern = patterns[i]
             n_nz = len(pattern.indices)
             for i in range(n_nz):

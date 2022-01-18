@@ -21,7 +21,7 @@ b = 0.8
 wta = True
 
 list_Fs = [2]
-list_Tw = [0.95]
+list_Tw = [0.9]
 
 """  params for noisy-x-hot label descriptions """
 x = 50  # bits per class

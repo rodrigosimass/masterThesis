@@ -21,10 +21,7 @@ n_epochs = 5
 b = 0.8
 wta = True
 
-""" 
-Use  Fs = [1,2] and Tw = [0.88, 0.91, 0.93] to get results close to the paper.
-"""
-
+""" Use  Fs = [1,2], Tw = [0.88, 0.91, 0.93] to get results close to the paper."""
 list_Fs = [1, 2]
 list_Tw = [0.88, 0.91, 0.93]
 
@@ -106,7 +103,7 @@ for Tw in list_Tw:
         max_fos = int(codes.shape[0] / codes.shape[1])
 
         wn = AAWN(code_size)  # empty memory
-        for fos in trange(max_fos, desc="main", unit="fos"):
+        for fos in trange(max_fos, desc="storing", unit="fos"):
 
             n_stored = code_size * (fos + 1)
             new_data = codes[n_stored - code_size : n_stored]
@@ -120,29 +117,23 @@ for Tw in list_Tw:
 
             ret_lbls = lbls[:n_stored]
 
-            # measure errors
-            pre = perfect_retrieval_error(codes[:n_stored], ret)
-
-            err_1NN = err_1NNclassifier(
-                ret, ret_lbls, codes[:n_stored], lbls[:n_stored]
-            )
-
-            hd_extra, hd_lost, hd = hamming_distance_detailed(
-                codes[:n_stored], ret[:n_stored]
+            """ Evaluate """
+            err = eval(
+                codes[:n_stored], lbls[:n_stored], ret[:n_stored], lbls[:n_stored]
             )
 
             if USE_WANDB:
-                # step-wise log
                 log_dict = {
-                    "err_1NN_": err_1NN,
                     "will_S": will_S,
                     "ret_AS": ret_AS,
                     "ret_%B": ret_densest,
                     "cod_AS": coded_AS,
                     "cod_%B": coded_densest,
-                    "err_hd": hd,
-                    "err_hd_extra": hd_extra,
-                    "err_hd_lost": hd_lost,
+                    "err_pre": err[0],
+                    "err_hd_extra": err[1],
+                    "err_hd_lost": err[2],
+                    "err_hd": err[3],
+                    "err_1nn": err[4],
                 }
 
                 ex_ret = ret[ex_idxs]
@@ -151,11 +142,11 @@ for Tw in list_Tw:
                 wandb.log(log_dict, step=n_stored)
             else:
                 print(f"n_stored = {n_stored:.5f}")
-                print(f"    pre     = {pre:.5f}")
-                print(f"    err_1NN = {err_1NN:.5f}")
-                print(f"    hd      = {hd:.5f}")
-                print(f"        hd_extra = {hd_extra:.5f}")
-                print(f"        hd_lost  = {hd_lost:.5f}")
+                print(f"    pre     = {err[0]:.5f}")
+                print(f"    err_1NN_1 = {err[4]:.5f}")
+                print(f"    hd      = {err[3]:.5f}")
+                print(f"        hd_extra = {err[1]:.5f}")
+                print(f"        hd_lost  = {err[2]:.5f}")
 
         if USE_WANDB:
             wandb.finish()

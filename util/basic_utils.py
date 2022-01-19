@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 import math
 import torch
@@ -70,6 +69,3 @@ def mse_torch(pred, truth):
     loss = mse(pred.float(), truth.float())
     # TODO:
     return loss.item()
-
-
-# %%

@@ -25,7 +25,7 @@ list_Fs = [1, 2]
 list_Tw = [0.75, 0.8, 0.85]
 
 
-trial_run = False  # if True: Reduce the size of the datasets for debugging
+TRIAL_RUN = False  # if True: Reduce the size of the datasets for debugging
 
 imgs, lbls, _, _ = read_mnist(n_train=60000)
 
@@ -53,7 +53,7 @@ for Tw in list_Tw:
 
         code_size = codes.shape[1]
 
-        if trial_run:
+        if TRIAL_RUN:
             imgs = imgs[: code_size * 2]
             lbls = lbls[: code_size * 2]
             codes = codes[: code_size * 2]
@@ -77,7 +77,7 @@ for Tw in list_Tw:
                     "codes_%B": coded_densest,
                 },
             )
-            name = "TRIAL_" if trial_run else "final"
+            name = "TRIAL_" if TRIAL_RUN else ""
             wandb.run.name = name + f"Fs {Fs}  Tw {Tw:.2f}"
 
             # 10 examples stored in the first iteration (visualization)
@@ -87,12 +87,9 @@ for Tw in list_Tw:
 
             # initial log
             log_dict = {
-                "will_S": 0,
+                "will_S": 0.0,
                 "ret_AS": coded_AS,
                 "ret_%B": coded_densest,
-                "cod_AS": coded_AS,
-                "cod_%B": coded_densest,
-                "err_1NN": 0.0,
             }
             log_dict["MNIST"] = wandb.Image(np_to_grid(ex_img))
             log_dict["Coded Set"] = wandb.Image(code_grid(ex_cod, K, Q))
@@ -102,6 +99,7 @@ for Tw in list_Tw:
         max_fos = int(codes.shape[0] / codes.shape[1])
 
         wn = AAWN(code_size)  # empty memory
+
         for fos in trange(max_fos, desc="storing", unit="fos"):
 
             n_stored = code_size * (fos + 1)
@@ -137,13 +135,6 @@ for Tw in list_Tw:
                 log_dict["Ret Set"] = wandb.Image(code_grid(ex_ret, K, Q))
 
                 wandb.log(log_dict, step=n_stored)
-            else:
-                print(f"n_stored = {n_stored:.5f}")
-                print(f"    pre     = {err[0]:.5f}")
-                print(f"    err_1NN_1 = {err[4]:.5f}")
-                print(f"    hd      = {err[3]:.5f}")
-                print(f"        hd_extra = {err[1]:.5f}")
-                print(f"        hd_lost  = {err[2]:.5f}")
 
         if USE_WANDB:
             wandb.finish()

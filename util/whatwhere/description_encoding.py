@@ -11,22 +11,23 @@ import matplotlib.pyplot as plt
 """ ------------------------------------------------------------ """
 
 
-def noisy_x_hot_encoding(lbls, x=50, p_c=0.5, p_r=0.0, n_classes=10):
+def noisy_x_hot_encoding(lbls, x=50, Pc=0.5, Pr=0.0, n_classes=10):
     """
     "Stochastic" vervion of x_hot: the x units correscoping to the class will
-    activate with p_class (high value), the rest of the array will activate with p_rest (low value)
+    activate with Pclass (high value), the rest of the array will activate with Prest (low value)
+    @returns descs: 2d np array with descriptions
     """
     descs = np.zeros(shape=(lbls.shape[0], n_classes * x))
-    for i in range(lbls.shape[0]):
+    for i in trange(lbls.shape[0], desc="Noisy-x-hot", leave=False, unit="lbls"):
         lbl = lbls[i]
         start = lbl * x
         end = start + x
         for j in range(descs.shape[1]):
             if start <= j < end:
-                if p_c > random.random():
+                if Pc > random.random():
                     descs[i][j] = 1
             else:
-                if p_r > random.random():
+                if Pr > random.random():
                     descs[i][j] = 1
     return descs
 
@@ -97,44 +98,53 @@ def x_hot_encoding(lbls, x=1, n_classes=10, reordered=False, order=None):
     return x_hot
 
 
-def concatenate(descs, codes):
+def join(descs, codes):
     """
     Concatenates description (Desc|Codes).
     @param codes: 2D csr matrix (n_codes * code_size) with binary code.
     @param descs: 2D np array (n_codes * desc_size) with binary coded description.
-    @returns desc_code: 2D csr binary matrix (n_codes * (desc_size + code_size)) (Desc|Codes)
+    @returns desCodes: 2D csr binary matrix (n_codes * (desc_size + code_size)) (Desc|Codes)
     """
     if codes.shape[0] != descs.shape[0]:
         print(
             f"WARNING: codes shape[0] ({codes.shape[0]}) differs from descs.shape[0] ({descs.shape[0]})"
         )
         exit(0)
+    n = codes.shape[0]
+    code_size = codes.shape[1]
+    desc_size = descs.shape[1]
 
-    desc_code = np.hstack((descs, codes.toarray()))
+    desCodes = np.empty((n, desc_size + code_size))
+    desCodes[:, 0:desc_size] = descs
+    desCodes[:, desc_size : desc_size + code_size] = codes.toarray()
 
-    return csr_matrix(desc_code)
+    return csr_matrix(desCodes)
 
 
-def deconcatenate(concatenated, desc_size=10):
+def separate(desCodes, desc_size):
     """
-    UNDO of concatenate() function
-    @param concatenated: 2D csr binary matrix (n_patterns * (desc_size + code_size)) descs (left) + codes (right)
+    UNDO of join() function
+    @param desCodes: 2D csr binary matrix (n_patterns * (desc_size + code_size)) descs (left) + codes (right)
     @param desc_size: index for column-wise slice
     @returns descs: 2D np array (n_codes * desc_size)
     @returns codes: 2D csr matrix (n_codes * desc_size)
     """
-
-    split = np.split(concatenated.toarray(), indices_or_sections=[desc_size], axis=1)
-    descs = split[0]
-    codes = csr_matrix(split[1])
-
-    return descs, codes
+    descs = desCodes[:, 0:desc_size].toarray()
+    codes = csr_matrix(desCodes[:, desc_size:])
+    return (descs, codes)
 
 
-def detach(arr, idx):
-    l = arr[:, 0:idx]
-    r = arr[:, idx:]
-    return (l, r)
+def get_descs(desCodes, desc_size):
+    return desCodes[:, 0:desc_size]
+
+
+def get_codes(desCodes, desc_size):
+    return desCodes[:, desc_size:]
+
+
+def delete_descs(desCodes, desc_size):
+    desCodes[:, 0:desc_size] = 0
+    return desCodes
 
 
 def plot_class_act(descs, lbls, c):
@@ -164,58 +174,9 @@ def interval_classifier(prediction, truth, n=11, n_classes=10, verbose=False):
     return correct / prediction.shape[0]
 
 
-def autoassociation(desCodes, desc_size, full_memory):
-    """
-    Measures how good the memory is at maintaining the correct label in
-    auto-association.
-    @param desCodes: 2D binary csr_matrix (desc|code)
-    @param desc_size: size of description
-    @param full_memory: AAWN memory already storing desCodes
-    @returns descs: descs before memory
-    @returns descs_ret: descs after memory
-    """
-    ret = full_memory.retrieve(desCodes)
-    descs_ret = deconcatenate(ret, desc_size)[0]
-
-    return descs_ret
-
-
-def completion(desCodes, desc_size, full_memory):
-    """
-    Measures how good the memory is at completing the missing
-    desc of stored patterns
-    @param desCodes: 2D binary csr_matrix (desc|code)
-    @param desc_size: size of description
-    @param full_memory: AAWN memory already storing desCodes
-    """
-    codes = deconcatenate(desCodes, desc_size)[1]
-    empty_descs = np.zeros((codes.shape[0], desc_size))
-    just_codes = concatenate(empty_descs, codes)
-    ret = full_memory.retrieve(just_codes)
-    descs_ret = deconcatenate(ret, desc_size)[0]
-
-    return descs_ret
-
-
-def classification(tst_desCodes, desc_size, full_memory):
-    """
-    Measures how good the memory is classifying unseen codes.
-    @param desCodes: 2D binary csr_matrix (desc|code) with tst set
-    @param desc_size: size of description
-    @param full_memory: AAWN memory already storing desCodes
-    """
-    tst_codes = deconcatenate(tst_desCodes, desc_size)[1]
-    empty_descs = np.zeros((tst_codes.shape[0], desc_size))
-    just_codes = concatenate(empty_descs, tst_codes)
-    ret = full_memory.retrieve(just_codes)
-    descs_ret = deconcatenate(ret, desc_size)[0]
-
-    return descs_ret
-
-
 def generate(gen_desCodes, full_memory, desc_size):
     ret = full_memory.retrieve(gen_desCodes)
-    gen_codes = deconcatenate(ret, desc_size)[1]
+    gen_codes = separate(ret, desc_size)[1]
     return gen_codes
 
 
@@ -240,13 +201,13 @@ if __name__ == "__main__":
     codes = csr_matrix(np.random.randint(low=0, high=2, size=(10, 5)))
     print(codes.toarray())
 
-    desc_codes = concatenate(one_hot, codes)
+    desc_codes = join(one_hot, codes)
     print("Desc_Codes (Desc|Codes)")
     print("||L L L L L L L L L L C C C C C|")
     print(desc_codes.toarray())
-    desc, codes = deconcatenate(desc_codes, desc_size=10)
+    desc, codes = separate(desc_codes, desc_size=10)
 
-    print("\ndeconcatenate(Desc + Codes) yields:")
+    print("\nseparate(Desc + Codes) yields:")
     print("desc:")
     print(desc)
     print("and codes:")

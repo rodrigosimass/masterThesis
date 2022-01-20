@@ -20,26 +20,28 @@ if len(sys.argv) < 2:
 USE_WANDB = bool(int(sys.argv[1]))
 
 
-""" Code generation params """
 rng = np.random.RandomState(0)  # reproducible
 K = 20
 Q = 21
 n_epochs = 5
 b = 0.8
 wta = True
+""" ------------------------------------------ """
+""" Code generation params """
 Fs = 2
-Tw = 0.9
+Tw = 0.75
 
 """Noisy-x-hot Description params"""
-x = 100
-Pc = 0.5
-Pr = 0.0
+nxh_x = 500
+nxh_Pc = 0.5
+nxh_Pr = 0.0
+""" ------------------------------------------ """
 
 """ Noise params """
-l_prob = [0.25, 0.5, 0.75, 1.0]  # each item in this list is a different wandb run
+l_prob = [0.0, 0.25, 0.5, 1.0]  # each item in this list is a different wandb run
 noise_type = "zero"  # none, zero, one TODO: add "both" noise option
 
-trial_run = False
+TRIAL_RUN = False
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)
@@ -65,21 +67,21 @@ codes, polar_params = compute_codes(
 
 code_size = codes.shape[1]
 
-if trial_run:
+if TRIAL_RUN:
     # Reduce the size of the datasets for debugging (2*fos)
     imgs = imgs[: code_size * 2]
     lbls = lbls[: code_size * 2]
     codes = codes[: code_size * 2]
     polar_params = polar_params[: code_size * 2]
 
-descs = noisy_x_hot_encoding(lbls, x, Pc, Pr)
-desCodes = concatenate(descs, codes)
+descs = noisy_x_hot_encoding(lbls, nxh_x, nxh_Pc, nxh_Pr)
+desCodes = join(descs, codes)
 desc_size = descs.shape[1]
 
 for prob in tqdm(l_prob, desc="main", unit="run"):
 
     codes_noisy = add_noise(codes, noise_type, prob)
-    desCodes_noisy = concatenate(descs, codes_noisy)
+    desCodes_noisy = join(descs, codes_noisy)
 
     if USE_WANDB:
         wandb.init(
@@ -95,28 +97,23 @@ for prob in tqdm(l_prob, desc="main", unit="run"):
                 "ww_Tw": Tw,
                 "noise_type": noise_type,
                 "noise_prob": prob,
-                "NXH_x": x,
-                "NXH_Pc": Pc,
-                "NXH_Pr": Pr,
+                "NXH_x": nxh_x,
+                "NXH_Pc": nxh_Pc,
+                "NXH_Pr": nxh_Pr,
             },
         )
 
-        name = "TRIAL_" if trial_run else ""
-        name += "desCodes_"
-        if noise_type == "one" or noise_type == "zero":
+        name = "TRIAL_" if TRIAL_RUN else ""
+        name += f"desCodes_{nxh_x}_"
+        if noise_type == "none" or prob == 0.0:
+            name += "none"
+        else:
             name += noise_type
             name += "_p" + str(prob)
         wandb.run.name = name
 
         """ log the initial state (no memory) """
-        log_dict = {
-            "err_pre": 0.0,
-            "err_hd_extra": 0.0,
-            "err_hd_lost": 0.0,
-            "err_hd": 0.0,
-            "err_err_1nn": 0.0,
-        }
-
+        log_dict = {}
         sparsity = measure_sparsity(codes_noisy)
         log_dict["sparsity_average"] = sparsity[0]
         log_dict["sparsity_densest"] = sparsity[1]
@@ -155,7 +152,7 @@ for prob in tqdm(l_prob, desc="main", unit="run"):
 
         """ present the memory with noisy versions of the data """
         ret_desCodes = wn.retrieve(desCodes_noisy[:n_stored])
-        ret_descs, ret_codes = detach(ret_desCodes, desc_size)
+        ret_descs, ret_codes = separate(ret_desCodes, desc_size)
 
         """ create reconstructions """
         recons = recon_with_polar(ret_codes, features, polar_params[:n_stored], Q, K)
@@ -165,10 +162,7 @@ for prob in tqdm(l_prob, desc="main", unit="run"):
 
         """ evaluate quality of codes """
         err = eval(
-            codes[:n_stored],
-            lbls[:n_stored],
-            ret_codes[:n_stored],
-            lbls[:n_stored],
+            codes[:n_stored], lbls[:n_stored], ret_codes[:n_stored], lbls[:n_stored]
         )
 
         if USE_WANDB:
@@ -177,7 +171,7 @@ for prob in tqdm(l_prob, desc="main", unit="run"):
                 "err_hd_extra": err[1],
                 "err_hd_lost": err[2],
                 "err_hd": err[3],
-                "err_err_1nn": err[4],
+                "err_1nn": err[4],
                 "mse_extra": mse_extra,
                 "mse_lost": mse_lost,
                 "mse": mse,

@@ -34,3 +34,11 @@ Experiments:
         [] Fazer plot do MSE de reconstrucao por class (paraver se o modelo esta a dar overfit a uma class especifica)
     Encoder:
     Autoencoder:
+
+[x] Fazer uma funcao que mete as descs a zero, passar as funcoes autoassociation, completion e classification para o main
+[x] Exprimentar Pr = 0.0 e Pc= numero baixo para garantir sparseness.
+
+Optimizaçoes:
+[] Usar csr_matrix no interval_classifier
+[] Usar CSC para column slicing
+[] Usar LIL ou DOK para mudanças de sparsity

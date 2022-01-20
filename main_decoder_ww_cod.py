@@ -30,9 +30,9 @@ n_epochs = 5
 b = 0.8
 wta = True
 Fs = 2
-Tw = 0.95
+Tw = 0.9
 
-trial_run = False
+TRIAL_RUN = False
 l_prob = [0.0]  # each item in this list is a different wandb run
 noise_type = "none"  # zero, one or none
 
@@ -60,7 +60,7 @@ codes, polar_params = compute_codes(
 #%%
 
 code_size = codes.shape[1]
-if trial_run:
+if TRIAL_RUN:
     # Reduce the size of the datasets for debugging
     imgs = imgs[: code_size * 2]
     lbls = lbls[: code_size * 2]
@@ -97,9 +97,12 @@ for prob in l_prob:
             },
         )
 
-        name = "TRIAL_" if trial_run else ""
-        name += noise_type
-        if noise_type != "none":
+        name = "TRIAL_" if TRIAL_RUN else ""
+        name += "codes_"
+        if noise_type == "none" or prob == 0.0:
+            name += "none"
+        else:
+            name += noise_type
             name += "_p" + str(prob)
         wandb.run.name = name
 
@@ -109,7 +112,7 @@ for prob in l_prob:
             "err_hd_extra": 0.0,
             "err_hd_lost": 0.0,
             "err_hd": 0.0,
-            "err_err_1nn": 0.0,
+            "err_1nn": 0.0,
         }
 
         sparsity = measure_sparsity(codes_noisy)
@@ -166,7 +169,7 @@ for prob in l_prob:
                 "err_hd_extra": err[1],
                 "err_hd_lost": err[2],
                 "err_hd": err[3],
-                "err_err_1nn": err[4],
+                "err_1nn": err[4],
                 "mse_extra": extra,
                 "mse_lost": lost,
                 "mse": mse,

@@ -143,8 +143,9 @@ def get_codes(desCodes, desc_size):
 
 
 def delete_descs(desCodes, desc_size):
+    desCodes = desCodes.toarray()
     desCodes[:, 0:desc_size] = 0
-    return desCodes
+    return csr_matrix(desCodes)
 
 
 def plot_class_act(descs, lbls, c):

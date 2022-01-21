@@ -14,7 +14,7 @@ def naive_encode1(imgs, B):
     imgs_copy = np.zeros_like(imgs)
     imgs_copy = imgs_copy.reshape(imgs.shape[0], -1)
 
-    for i in trange(imgs.shape[0], desc="Naive encoding", leave=False):
+    for i in trange(imgs.shape[0], desc="Naive encoding"):
         img = imgs[i].flatten()
         copy = imgs_copy[i]
 

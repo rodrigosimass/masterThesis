@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 import wandb
 from tqdm import trange
@@ -13,28 +12,27 @@ from util.pytorch.tools import np_to_grid
 from util.kldiv import *
 from util.basic_utils import mse_detailed
 
-#%%
 
 if len(sys.argv) < 2:
     print("ERROR! \nusage: python3 MLP.py <<0/1>> for wandb on or off")
     exit(1)
 USE_WANDB = bool(int(sys.argv[1]))
 
-#%%
 
-""" Code generation parameters """
 rng = np.random.RandomState(0)  # reproducible
 K = 20
 Q = 21
 n_epochs = 5
 b = 0.8
 wta = True
+
+""" Code generation parameters """
 Fs = 2
-Tw = 0.9
+Tw = 0.75
 
 TRIAL_RUN = False
-l_prob = [0.0]  # each item in this list is a different wandb run
-noise_type = "none"  # zero, one or none
+l_prob = [0.25, 0.5, 0.75, 1.0]  # each item in this list is a different wandb run
+noise_type = "zero"  # zero, one or none
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)
@@ -57,7 +55,6 @@ codes, polar_params = compute_codes(
     verbose=False,
 )
 
-#%%
 
 code_size = codes.shape[1]
 if TRIAL_RUN:
@@ -80,6 +77,11 @@ for prob in l_prob:
             f"Unknown noise type: <<{noise_type}>>.\nUse: <<one>>, <<zero>>, or <<none>>"
         )
 
+    if prob == 0.0:
+        noise_name = "none"
+    else:
+        noise_name = noise_type
+
     if USE_WANDB:
         wandb.init(
             project="decoder_whatwhere",
@@ -92,14 +94,14 @@ for prob in l_prob:
                 "km_Fs": Fs,
                 "ww_Q": Q,
                 "ww_Tw": Tw,
-                "noise_type": noise_type,
+                "noise_type": noise_name,
                 "noise_prob": prob,
             },
         )
 
         name = "TRIAL_" if TRIAL_RUN else ""
         name += "codes_"
-        if noise_type == "none" or prob == 0.0:
+        if noise_name == "none":
             name += "none"
         else:
             name += noise_type
@@ -107,13 +109,7 @@ for prob in l_prob:
         wandb.run.name = name
 
         """ log the initial state (no memory) """
-        log_dict = {
-            "err_pre": 0.0,
-            "err_hd_extra": 0.0,
-            "err_hd_lost": 0.0,
-            "err_hd": 0.0,
-            "err_1nn": 0.0,
-        }
+        log_dict = {}
 
         sparsity = measure_sparsity(codes_noisy)
         log_dict["sparsity_average"] = sparsity[0]

@@ -24,7 +24,7 @@ b = 0.8
 wta = True
 
 list_Fs = [2]
-list_Tw = [0.65, 0.10, 0.75]
+list_Tw = [0.75, 0.80, 0.85]
 
 """Noisy-x-hot Description params"""
 nxh_x = 500

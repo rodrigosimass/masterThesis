@@ -36,7 +36,7 @@ def sample_from_dist(dist, n=1):
 
 
 def sample_from_dists(dists, gen_lbls):
-    """ 
+    """
     @param dists: distribution for each class
     """
     n_samples = gen_lbls.shape[0]
@@ -52,7 +52,7 @@ def sample_from_dists(dists, gen_lbls):
     return csr_matrix(samples)
 
 
-def create_gen_lbls(n_classes=10, n_exs=10, transpose=True):
+def create_gen_lbls(n_classes=10, n_exs=10, transpose=False):
     gen_lbls = np.tile(np.arange(n_classes), n_exs).reshape(n_exs, n_classes)
     if transpose:
         gen_lbls = gen_lbls.T

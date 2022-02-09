@@ -1,7 +1,6 @@
 """
 Reproduction of Sa-Conto and Wichert 2020
 """
-#%%
 import numpy as np
 from util.whatwhere.encoder import *
 from util.whatwhere.decoder import *
@@ -13,11 +12,9 @@ from util.willshaw.plot import *
 from util.pickleInterface import *
 from util.pytorch.tools import np_to_grid
 import wandb
-from util.kldiv import *
 from tqdm import trange
 
 
-#%%
 list_B = [3, 4, 6]
 list_T = [0.95, 0.9, 0.85]
 

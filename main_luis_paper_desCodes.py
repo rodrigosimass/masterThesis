@@ -11,7 +11,6 @@ from util.willshaw.plot import *
 from util.pickleInterface import *
 from util.pytorch.tools import np_to_grid
 import wandb
-from util.kldiv import *
 from tqdm import trange
 from util.whatwhere.description_encoding import *
 import time

@@ -1,4 +1,4 @@
-**/pickles
+*.p
 **/wandb
 *.pyc
 **/.vscode

@@ -9,7 +9,7 @@ from util.whatwhere.noise import *
 from util.willshaw.memory import *
 from util.willshaw.plot import *
 from util.pytorch.tools import np_to_grid
-from util.kldiv import *
+from util.distribution import *
 from util.basic_utils import mse_detailed
 from util.whatwhere.description_encoding import *
 
@@ -38,7 +38,7 @@ nxh_Pr = 0.0
 """ ------------------------------------------ """
 
 """ Noise params """
-l_prob = [0.0, 0.25, 0.5, 1.0]  # each item in this list is a different wandb run
+l_prob = [0.75]  # each item in this list is a different wandb run
 noise_type = "zero"  # none, zero, one TODO: add "both" noise option
 
 TRIAL_RUN = False

@@ -4,7 +4,7 @@ import numpy as np
 path = "mnist/data/"
 
 
-def plot_class_activity_2D(data, labels):
+def plot_mnist_class_2D(data, labels):
 
     fig, axs = plt.subplots(2, 5, constrained_layout=True)
 
@@ -23,7 +23,7 @@ def plot_class_activity_2D(data, labels):
     plt.savefig(f"img/mnist/class_activity_2D.png", bbox_inches="tight")
 
 
-def plot_class_activity_1D(data, labels, sorted=False):
+def plot_mnist_class_1D(data, labels, sorted=False):
 
     fig, axs = plt.subplots(10, 1, sharex=True, sharey=True)
 
@@ -32,12 +32,13 @@ def plot_class_activity_1D(data, labels, sorted=False):
     else:
         fig.suptitle("MNIST Average pixel activity per class (sorted)", fontsize=16)
 
+    data = data.reshape(-1, 28 * 28)
+
     for i in range(10):
-        print(i)
         avgImg = np.average(data[labels == i], 0)
 
         if sorted:
-            avgImg = np.flip(np.sort(avgImg))  # descending sort
+            avgImg = np.sort(avgImg)  # descending sort
 
         ax = axs[i]
         ax.bar(
@@ -56,12 +57,12 @@ def plot_class_activity_1D(data, labels, sorted=False):
         ax.set_xlim((0, 783))
 
     if sorted:
-        plt.savefig(f"img/mnist/class_activity_1D_sorted.png", bbox_inches="tight")
+        plt.savefig(f"img/mnist/class_activity_1D_sorted.png", bbox_inches="tight", dpi=200)
     else:
-        plt.savefig(f"img/mnist/class_activity_1D.png", bbox_inches="tight")
+        plt.savefig(f"img/mnist/class_activity_1D.png", bbox_inches="tight", dpi=200)
 
 
-def plot_activity(data, labels):
+def plot_mnist(data, labels):
     sum_X = np.sum(data, axis=0)
     # print(np.max(sum_X))
     sum_X = sum_X / data.shape[0]

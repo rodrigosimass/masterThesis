@@ -17,7 +17,7 @@ Housekeeping:
 Experiments:
     Code generation:
         [] experiment with/without winner takes all
-        [] Ver como é que o Fs influencia a distancia no step de convolution da geração de codigos
+        [] Ver como é que o Fs influencia a norma no step de convolution da geração de codigos
         [] baseline: guardar versão binaria do MNIST com threshold na willshaw e medir retrive error (como no paper do Luis).
         [x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
         [x] Fazer a kl div como deve de ser (normalizada para 1)
@@ -42,3 +42,39 @@ Optimizaçoes:
 [] Usar csr_matrix no interval_classifier
 [] Usar CSC para column slicing
 [] Usar LIL ou DOK para mudanças de sparsity
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Tese:
+    Refazer e organizar:
+    [] Reproduzir paper do Luis com mais valores na Grid-Search:
+        () Fs maior que 2
+        () Tw menor que 0.75
+        () Exprimentar com wta
+        () Exprimentar com background
+    [] Experiments da distribution estao uma confusao.
+        () Refazer a analise de Q vs KLdiv vs Shannon entropy.
+        () Medir apenas a que funciona para a experiemnt de storage.
+    [] Dirty Reconstructions.
+        () Repetir estas experiments no WANDB.
+        () Medir os dois tipos de erro (loss e extra) ao longo do storing.
+        () Treinar o MLP e CNN no cod, ret, e ret+cod
+    [] Fazer baseline para as descriptions com o binary e X-HOT descriptions.
+    [] Verificar se as desCodes pseudo-generations e generations estao sempre a usar a mesma desC (duvida da meeting 10)
+    Pontas Soltas:
+    [] Pseudo-WN: usar os valores de uma WN treinada para inicializar um sparse hidden layer duma NN.
+        () Definir o bias term como o valor médio do threshold de retrieval.
+        () Usar uma transfer function parecida a soft thresholding.
+    [] Class-wise kmeans feature learning (presentation 6).
+        () Fazer PCA do normal vs o CW.
+        () Olhar para os valores dos eigen vectors para ver se há um conjunto pequeno de dimensões a ser overfitted.
+
+
+Paper:
+    Refazer e organizar:
+        []
+    Novas experiments:
+        [] Usar a modalidade do tempo, juntamente com os códigos e ww codes (presentation 8).
+        []

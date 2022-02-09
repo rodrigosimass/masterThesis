@@ -9,7 +9,7 @@ from util.pickleInterface import *
 from util.pytorch.tools import np_to_grid
 from util.whatwhere.description_encoding import *
 import wandb
-from util.kldiv import *
+from util.distribution import *
 from tqdm import trange
 
 """ params for codes """

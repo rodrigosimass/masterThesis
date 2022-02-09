@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from util.kldiv import *
+from util.distribution import *
 from util.pickleInterface import load_codes, load_ret
 from util.mnist.tools import *
 

@@ -4,7 +4,7 @@ from util import *
 import random
 import numpy as np
 from ..basic_utils import best_layout, binary_sparsity
-from util.kldiv import *
+from util.distribution import *
 from .decoder import recon_with_polar
 from sklearn.metrics import mean_squared_error
 import plotly.express as px

@@ -9,7 +9,7 @@ from util.whatwhere.noise import *
 from util.willshaw.memory import *
 from util.willshaw.plot import *
 from util.pytorch.tools import np_to_grid
-from util.kldiv import *
+from util.distribution import *
 from util.basic_utils import mse_detailed
 
 

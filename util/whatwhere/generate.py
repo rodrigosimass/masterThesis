@@ -53,7 +53,9 @@ def sample_from_dists(dists, gen_lbls):
 
 
 def create_gen_lbls(n_classes=10, n_exs=10, transpose=False):
-    gen_lbls = np.tile(np.arange(n_classes), n_exs).reshape(n_exs, n_classes)
     if transpose:
-        gen_lbls = gen_lbls.T
+        gen_lbls = np.repeat(np.arange(n_classes), n_exs)
+    else:
+        gen_lbls = np.tile(np.arange(n_classes), n_exs).reshape(n_exs, n_classes)
+
     return gen_lbls.flatten()

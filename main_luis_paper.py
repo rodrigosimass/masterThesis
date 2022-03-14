@@ -11,7 +11,7 @@ from util.willshaw.plot import *
 from util.pickleInterface import *
 from util.pytorch.tools import np_to_grid
 import wandb
-from util.kldiv import *
+from util.distribution import *
 from tqdm import trange
 
 rng = np.random.RandomState(0)  # reproducible
@@ -59,6 +59,7 @@ for Tw in list_Tw:
             codes = codes[: code_size * 2]
 
         coded_AS, coded_densest = measure_sparsity(codes)
+        codes_e = shannon_entropy_set(codes.toarray())
 
         if USE_WANDB:
 
@@ -75,9 +76,10 @@ for Tw in list_Tw:
                     "ww_Twhat": Tw,
                     "codes_AS": coded_AS,
                     "codes_%B": coded_densest,
+                    "codes_e": codes_e,
                 },
             )
-            name = "TRIAL_" if TRIAL_RUN else ""
+            name = "TRIAL_" if TRIAL_RUN else "entropy"
             wandb.run.name = name + f"Fs {Fs}  Tw {Tw:.2f}"
 
             # 10 examples stored in the first iteration (visualization)
@@ -112,10 +114,15 @@ for Tw in list_Tw:
             ret_AS, ret_densest = measure_sparsity(ret)
             will_S = wn.sparsity()
 
-            ret_lbls = lbls[:n_stored]
+            """ measure distribution """
+            cod_e = shannon_entropy_set(codes[:n_stored].toarray())
+            ret_e = shannon_entropy_set(ret[:n_stored].toarray())
+
 
             """ Evaluate """
+            ret_lbls = lbls[:n_stored]
             err = eval(codes[:n_stored], lbls[:n_stored], ret[:n_stored], ret_lbls)
+
 
             if USE_WANDB:
                 log_dict = {
@@ -129,6 +136,8 @@ for Tw in list_Tw:
                     "err_hd_lost": err[2],
                     "err_hd": err[3],
                     "err_1nn": err[4],
+                    "cod_e": cod_e,
+                    "ret_e": ret_e,
                 }
 
                 ex_ret = ret[ex_idxs]

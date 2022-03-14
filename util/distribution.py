@@ -1,8 +1,7 @@
 from math import log2
 import numpy as np
 from scipy.stats import entropy
-from .plot import plot_dists
-
+from .plot import *
 
 def distributions(dataset):
     activity = np.count_nonzero(dataset == 1, axis=0)
@@ -67,19 +66,17 @@ def kl_divergence_set(dataset, verbose=0):
     return kl_divergence(p, q, verbose)
 
 
-def shannon_entropy(dist, b=2, verbose=False):
+def shannon_entropy(dist, b=2):
     e = entropy(dist, base=b)
-    if verbose:
-        print(f"Shannon entropy = {e}")
     return e
 
 
-def shannon_entropy_set(dataset, b=2, verbose=False):
+def shannon_entropy_set(dataset, b=2):
     """
     Dataset interface
     """
     dist, _ = distributions(dataset)
-    return shannon_entropy(dist, b, verbose)
+    return shannon_entropy(dist, b)
 
 
 def measure_data_distribution(p, q, entropy_b=2, verbose=False):

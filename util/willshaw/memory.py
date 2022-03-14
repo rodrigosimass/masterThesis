@@ -187,8 +187,8 @@ def eval(codes, codes_lbls, ret, ret_lbls):
 
 if __name__ == "__main__":
 
-    right = np.array([0, 0, 1, 1])
-    left = np.array([1, 1, 0, 0])
+    right = np.array([0, 1, 0, 0, 1, 1])
+    left = np.array([1, 0, 1, 1, 0, 0])
     dataset = csr_matrix(np.vstack((right, left)))
 
     print("Dataset:\n", dataset.toarray())
@@ -202,8 +202,16 @@ if __name__ == "__main__":
     print("Weight matrix:\n", wn.W.toarray())
     print(f"Sparsity of W = {wn.sparsity()}")
 
-    right_noisy = np.array([1, 0, 1, 1])
-    left_noisy = np.array([1, 0, 0, 0])
+    c1 = np.array([0, 1, 0, 0, 0, 0])
+    c2 = np.array([0, 0, 1, 1, 0, 0])
+    cues = csr_matrix(np.vstack((c1, c2)))
+
+    print("Cues (before memory):\n", cues.toarray())
+    ret = wn.retrieve(cues)
+    print("Retrieved (after memory):\n", ret.toarray())
+
+    right_noisy = np.array([0, 1, 0, 0, 0, 0])
+    left_noisy = np.array([1, 0, 0, 0, 0, 0])
     cues = csr_matrix(np.vstack((right_noisy, left_noisy)))
 
     print("Cues (before memory):\n", cues.toarray())

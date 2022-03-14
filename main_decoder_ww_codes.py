@@ -31,7 +31,7 @@ Fs = 2
 Tw = 0.75
 
 TRIAL_RUN = False
-l_prob = [0.25, 0.5, 0.75, 1.0]  # each item in this list is a different wandb run
+l_prob = [0.1, 0.2]  # each item in this list is a different wandb run
 noise_type = "zero"  # zero, one or none
 
 """ load mnist """
@@ -124,7 +124,7 @@ for prob in l_prob:
         log_dict["mse"] = mse
 
         """ examples for visualization purposes """
-        idx = idxs_x_random_per_class(lbls[:code_size], x=3, seed=True)
+        idx = idxs_x_random_per_class(lbls[:code_size], x=1, seed=True)
         ex_img = imgs[idx]
         ex_codes_noisy = codes_noisy[idx]
         ex_polar_params = polar_params[idx]

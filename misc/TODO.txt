@@ -5,12 +5,12 @@ Questions:
 
 Housekeeping:
 [] guardar matrizes de bools
+[] usar ConfigArgParse
 [x] mudar nome dos ficheiros
 [x] Aprender a fazer SSH para o pc do Tagus
 [x] Correr o código com o CUDA no ubuntu.
 [x] use wandb
 [x] retirar plots das funcoes compute or load, meter essa logica no main
-[] usar ConfigArgParse
 [x] usar tqdm
 [x] migrar os ficheiros para linux subsystem por causa do WSL2
 
@@ -18,29 +18,28 @@ Experiments:
     Code generation:
         [] experiment with/without winner takes all
         [] Ver como é que o Fs influencia a norma no step de convolution da geração de codigos
-        [] baseline: guardar versão binaria do MNIST com threshold na willshaw e medir retrive error (como no paper do Luis).
+        [x] baseline: guardar versão binaria do MNIST com threshold na willshaw e medir retrive error (como no paper do Luis).
         [x] Medir a "distribution" dos sparse codes usando a KL divergence entre os codes e a uniform distribution.
         [x] Fazer a kl div como deve de ser (normalizada para 1)
         [x] Tentar Shannon Entropy para medir distribuiçao dos codigos
-        [] Exprimentar com class-wise feature learning no k-means
+        [x] Exprimentar com class-wise feature learning no k-means
     Willshaw:
         [] Usar MLP como pseudo Willshaw para fazer retrieval.
-            - Ver quais os valores do Threshold do retrieval process.
+            () Ver quais os valores do Threshold do retrieval process.
 
     Decoder:
         [x] Tentar o MLP com zero Hidden layers (perceptron)
         [x] Treinar uma deconvolution CNN com as mesmos parametros que geraram os codigos, comparar com aqueles que são obtidos com o KNN do Luis.
         [x] Comparar a accuracy do melhor CCN decoder, com um que seja inicializado com os kernels do Luis.
-        [] Fazer plot do MSE de reconstrucao por class (paraver se o modelo esta a dar overfit a uma class especifica)
-    Encoder:
-    Autoencoder:
+        [x] Fazer plot do MSE de reconstrucao por class (para ver se o modelo esta a dar overfit a uma class especifica)
+
 
 [x] Fazer uma funcao que mete as descs a zero, passar as funcoes autoassociation, completion e classification para o main
 [x] Exprimentar Pr = 0.0 e Pc= numero baixo para garantir sparseness.
 
 Optimizaçoes:
 [] Usar csr_matrix no interval_classifier
-[] Usar CSC para column slicing
+[] Usar CSC_matrix para column slicing
 [] Usar LIL ou DOK para mudanças de sparsity
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -56,13 +55,15 @@ Tese:
         () Exprimentar com background
     [] Experiments da distribution estao uma confusao.
         () Refazer a analise de Q vs KLdiv vs Shannon entropy.
-        () Medir apenas a que funciona para a experiemnt de storage.
-    [] Dirty Reconstructions.
+        () Medir apenas a que funciona (entropy) para a experiemnt de storage (main_luis_paper).
+    [] Dirty Reconstructions (MLP nad CNN).
         () Repetir estas experiments no WANDB.
         () Medir os dois tipos de erro (loss e extra) ao longo do storing.
         () Treinar o MLP e CNN no cod, ret, e ret+cod
     [] Fazer baseline para as descriptions com o binary e X-HOT descriptions.
-    [] Verificar se as desCodes pseudo-generations e generations estao sempre a usar a mesma desC (duvida da meeting 10)
+        () No encoding binario: começar no 0001 em vez de no 0000 (para a class 0 nao ter 0 bits activos)
+    [] Exprimentar sparse-noisy-x-hot.
+    [x] Verificar se as desCodes pseudo-generations e generations estao sempre a usar a mesma desC (duvida da meeting 10) -> não, a generation é que é fraca
     Pontas Soltas:
     [] Pseudo-WN: usar os valores de uma WN treinada para inicializar um sparse hidden layer duma NN.
         () Definir o bias term como o valor médio do threshold de retrieval.
@@ -77,4 +78,13 @@ Paper:
         []
     Novas experiments:
         [] Usar a modalidade do tempo, juntamente com os códigos e ww codes (presentation 8).
-        []
+        [] Usar a WN para anomaly detection (tipo auto-encoder) - quando a memória é exposta a um pattern novo, o sparsity do ret set vai ser baixa quando o pattern ainda nao foi visto pela memória
+        
+        desCodes:
+            [] Exprimentar encoding para as descs que tenha overlap entre as classes.
+            [] Fazer tuning a sparsity das descs para dar match ao dos codes.
+            [x] Trial and Error Genration: Usar a sparsity do ret code para mediar a qualidade da geraçao (s(ret)>s(cod) -> good)
+            [] Apagar alguns bits da desc quando fazemos generation (em vez de apagar apenas do code)
+            [ ] Iterative generation: nao fazer sample da distrib. da class. Começamos apenas com a desc, geramos a blog, fazemos sample da blob até ter uma saparsity menor que code,
+                damos a sample á mem, vemos a resposta, se for boa paramos, se não repetimos o processo.
+        

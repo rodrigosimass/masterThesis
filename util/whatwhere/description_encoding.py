@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 """ ------------------- Description creators ------------------- """
 """ ------------------------------------------------------------ """
 
+def empty_encoding(num_exs, desc_size):
+    return np.zeros(shape=(num_exs, desc_size))
 
 def noisy_x_hot_encoding(lbls, x=50, Pc=0.5, Pr=0.0, n_classes=10):
     """

@@ -31,8 +31,8 @@ Fs = 2
 Tw = 0.75
 
 TRIAL_RUN = False
-l_prob = [0.1, 0.2]  # each item in this list is a different wandb run
-noise_type = "zero"  # zero, one or none
+l_prob = [0.05, 0.1, 0.15]  # each item in this list is a different wandb run
+noise_type = "one"  # zero, one or none
 
 """ load mnist """
 imgs, lbls, _, _ = read_mnist(n_train=60000)
@@ -124,7 +124,7 @@ for prob in l_prob:
         log_dict["mse"] = mse
 
         """ examples for visualization purposes """
-        idx = idxs_x_random_per_class(lbls[:code_size], x=1, seed=True)
+        idx = idxs_x_random_per_class(lbls[:code_size], x=3, seed=True)
         ex_img = imgs[idx]
         ex_codes_noisy = codes_noisy[idx]
         ex_polar_params = polar_params[idx]
@@ -157,15 +157,15 @@ for prob in l_prob:
         extra, lost, mse = mse_detailed(recons, imgs[:n_stored])
 
         """ evaluate quality of codes """
-        err = eval(codes[:n_stored], lbls[:n_stored], ret[:n_stored], lbls[:n_stored])
+        #err = eval(codes[:n_stored], lbls[:n_stored], ret[:n_stored], lbls[:n_stored])
 
         if USE_WANDB:
             log_dict = {
-                "err_pre": err[0],
-                "err_hd_extra": err[1],
-                "err_hd_lost": err[2],
-                "err_hd": err[3],
-                "err_1nn": err[4],
+                #"err_pre": err[0],
+                #"err_hd_extra": err[1],
+                #"err_hd_lost": err[2],
+                #"err_hd": err[3],
+                #"err_1nn": err[4],
                 "mse_extra": extra,
                 "mse_lost": lost,
                 "mse": mse,

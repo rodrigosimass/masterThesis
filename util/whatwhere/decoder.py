@@ -42,7 +42,7 @@ def recon_with_polar(codes, features, polar_params, Q, K, I=28, J=28):
 
 def recon_no_polar(codes, features, Q, K, I=28, J=28):
 
-    default = np.array([[0, 0, 1]])  # default is center at (0,0) and radius 1
+    default = np.array([[0, 0, 0.91]])  # default is center at (0,0) and radius 0.91
     polar_params = np.repeat(default, repeats=codes.shape[0], axis=0)
 
     codes = codes.toarray()

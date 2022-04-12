@@ -34,12 +34,12 @@ Fs = 2
 Tw = 0.75
 
 """Noisy-x-hot Description params"""
-nxh_x = 160
+nxh_x = 500
 nxh_Pc = 0.5
 nxh_Pr = 0.0
 
 """ Noise params """
-l_prob = [1.0]  # each item in this list is a different wandb run
+l_prob = [0.0, 0.25, 0.5, 0.75]  # each item in this list is a different wandb run
 l_prob_desc = [0.0]
 noise_type = "zero"  # none, zero, one TODO: add "both" noise option
 
@@ -88,7 +88,6 @@ desc_size = descs.shape[1]
 prob_dists = compute_dists(codes, lbls)
 gen_codes = sample_from_dists(prob_dists, gen_lbls)
 
-#%%
 for prob in l_prob:
     for prob_desc in tqdm(l_prob_desc, desc="main", unit="run"):
 
@@ -123,9 +122,9 @@ for prob in l_prob:
             )
 
             name = "TRIAL_" if TRIAL_RUN else ""
-            name += f"desCodes_fullNoise_"
+            name += f"30exs"
             if noise_type == "none" or prob == 0.0:
-                name += "none"
+                name += "_none"
             else:
                 name += noise_type
                 name += "_pdesc" + str(prob_desc)

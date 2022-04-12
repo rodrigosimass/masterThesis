@@ -55,3 +55,6 @@ def multiple_imshow(imgs, layout=None, title=None, m=0, M=1):
         ax.imshow(imgs[i], vmin=m, vmax=M, cmap=plt.cm.gray)
         ax.set_xticks([])
         ax.set_yticks([])
+
+    fig.tight_layout()
+    plt.show()
